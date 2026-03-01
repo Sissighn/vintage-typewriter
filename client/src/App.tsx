@@ -60,6 +60,15 @@ export default function App() {
     autoScrollPaper();
   }, [text, autoScrollPaper]);
 
+  // Textarea Höhe an Inhalt anpassen
+  useEffect(() => {
+    const textarea = inputRef.current;
+    if (textarea) {
+      textarea.style.height = "auto";
+      textarea.style.height = `${textarea.scrollHeight}px`;
+    }
+  }, [text]);
+
   // ── Key flash ────────────────────────────────────────────────────
   const flashKey = useCallback((k: string) => {
     setPressedKey(k);
@@ -93,38 +102,67 @@ export default function App() {
     }
   }, [text, saving]);
 
+  // ── Textarea Change Handler ──────────────────────────────────────
+  const handleTextChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    // Die Längenprüfung erfolgt hier, um auch das Einfügen (Paste) abzufangen
+    if (e.target.value.length <= MAX_CHARS) {
+      setText(e.target.value);
+    }
+  };
+
   // ── Keyboard input ───────────────────────────────────────────────
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-      e.preventDefault();
       if (e.key === "Backspace") {
-        setText((t) => t.slice(0, -1));
         flashKey("Backspace");
         playKeySound("Backspace");
         return;
       }
       if (e.key === "Enter") {
-        if (text.length >= MAX_CHARS) return;
-        setText((t) => t + "\n");
         setCarriageReturn((n) => n + 1);
         flashKey("Enter");
         playKeySound("Enter");
         return;
       }
       if (e.key === "Tab") {
-        setText((t) => (t.length + 4 <= MAX_CHARS ? t + "    " : t));
+        e.preventDefault(); // Verhindert Fokuswechsel
+        const target = e.target as HTMLTextAreaElement;
+        const start = target.selectionStart;
+        const end = target.selectionEnd;
+        const newText = text.substring(0, start) + "    " + text.substring(end);
+
+        if (newText.length <= MAX_CHARS) {
+          setText(newText);
+          // Cursor nach den eingefügten Leerzeichen positionieren
+          setTimeout(() => {
+            target.selectionStart = target.selectionEnd = start + 4;
+          }, 0);
+        }
         flashKey("Tab");
         playKeySound("Tab");
         return;
       }
-      if ((e.ctrlKey || e.metaKey) && e.key === "s") {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "s") {
+        e.preventDefault(); // Verhindert das Speichern der Seite im Browser
         saveNote();
         return;
       }
+
+      // Standard-Tastenkombinationen (copy, paste, cut, select all) durchlassen
+      if (
+        (e.ctrlKey || e.metaKey) &&
+        ["a", "c", "v", "x"].includes(e.key.toLowerCase())
+      ) {
+        return; // Browser die Aktion ausführen lassen
+      }
+
       if (e.key.length === 1 && !e.ctrlKey && !e.metaKey) {
-        setText((t) => (t.length < MAX_CHARS ? t + e.key : t));
-        flashKey(e.key.toUpperCase());
-        playKeySound(e.key);
+        if (text.length < MAX_CHARS) {
+          flashKey(e.key.toUpperCase());
+          playKeySound(e.key);
+        } else {
+          e.preventDefault(); // Verhindert weitere Eingabe
+        }
       }
     },
     [text, flashKey, saveNote, playKeySound],
@@ -133,29 +171,54 @@ export default function App() {
   // ── Screen-key clicks ────────────────────────────────────────────
   const handleKeyClick = useCallback(
     (value: string, type: "char" | "key") => {
+      const textarea = inputRef.current;
+      if (!textarea) return;
+
+      textarea.focus();
+      const start = textarea.selectionStart;
+      const end = textarea.selectionEnd;
+
+      let newText = text;
+      let newCursorPos = start;
+
       if (type === "char") {
-        setText((t) => (t.length < MAX_CHARS ? t + value : t));
+        newText = text.substring(0, start) + value + text.substring(end);
+        newCursorPos = start + value.length;
         flashKey(value === " " ? " " : value.toUpperCase());
         playKeySound(value);
       } else {
         if (value === "Backspace") {
-          setText((t) => t.slice(0, -1));
+          if (start === end && start > 0) {
+            newText = text.substring(0, start - 1) + text.substring(end);
+            newCursorPos = start - 1;
+          } else if (start !== end) {
+            newText = text.substring(0, start) + text.substring(end);
+            newCursorPos = start;
+          }
           flashKey("Backspace");
           playKeySound("Backspace");
         } else if (value === "Enter") {
-          setText((t) => (t.length < MAX_CHARS ? t + "\n" : t));
+          newText = text.substring(0, start) + "\n" + text.substring(end);
+          newCursorPos = start + 1;
           setCarriageReturn((n) => n + 1);
           flashKey("Enter");
           playKeySound("Enter");
         } else if (value === "Tab") {
-          setText((t) => (t.length + 4 <= MAX_CHARS ? t + "    " : t));
+          newText = text.substring(0, start) + "    " + text.substring(end);
+          newCursorPos = start + 4;
           flashKey("Tab");
           playKeySound("Tab");
         }
       }
-      inputRef.current?.focus();
+
+      if (newText.length <= MAX_CHARS) {
+        setText(newText);
+        setTimeout(() => {
+          textarea.selectionStart = textarea.selectionEnd = newCursorPos;
+        }, 0);
+      }
     },
-    [flashKey, playKeySound],
+    [text, flashKey, playKeySound],
   );
 
   // ── Archive handlers ─────────────────────────────────────────────
@@ -203,7 +266,6 @@ export default function App() {
     >
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Special+Elite&display=swap');
-        @keyframes tw-cursor-blink { 0%,100%{opacity:1} 50%{opacity:0} }
         @keyframes drawer-in       { from{opacity:0;transform:translateX(10px)} to{opacity:1;transform:none} }
         @keyframes card-drop       { from{opacity:0;transform:translateY(-4px)} to{opacity:1;transform:none} }
         @keyframes save-pulse      { 0%,100%{opacity:1} 50%{opacity:.45} }
@@ -212,26 +274,9 @@ export default function App() {
         .cabinet-scroll::-webkit-scrollbar-track { background:rgba(180,155,135,.08); border-radius:2px; }
         .cabinet-scroll::-webkit-scrollbar-thumb { background:rgba(180,155,135,.4); border-radius:2px; }
         @media (prefers-reduced-motion:reduce) {
-          [style*="tw-cursor-blink"],[style*="save-pulse"] { animation:none!important;opacity:1!important; }
+          [style*="save-pulse"] { animation:none!important;opacity:1!important; }
         }
       `}</style>
-
-      {/* Verstecktes Eingabefeld für Tastatur-Events */}
-      <textarea
-        ref={inputRef}
-        aria-label="Schreibmaschinen-Eingabe"
-        onKeyDown={handleKeyDown}
-        readOnly
-        style={{
-          position: "fixed",
-          opacity: 0,
-          pointerEvents: "none",
-          width: 1,
-          height: 1,
-          top: 0,
-          left: 0,
-        }}
-      />
 
       {/* ── HEADER ── */}
       <header style={{ marginBottom: 28, textAlign: "center" }}>
@@ -316,59 +361,56 @@ export default function App() {
                 scrollbarWidth: "none",
               }}
             >
-              <div
+              {text.length === 0 && (
+                <div
+                  style={{
+                    position: "absolute",
+                    top: `${PAPER_PAD_V}px`,
+                    left: "26px",
+                    right: "26px",
+                    fontFamily: "'Special Elite','Courier New',monospace",
+                    fontSize: "clamp(9px,1.5vw,12px)",
+                    lineHeight: `${LINE_HEIGHT}px`,
+                    color:
+                      paperType === "blueprint"
+                        ? "rgba(255,255,255,0.3)"
+                        : "rgba(190,170,155,.5)",
+                    fontStyle: "italic",
+                    pointerEvents: "none",
+                    userSelect: "none",
+                    padding: `0 2px`, // Match textarea padding/border
+                  }}
+                >
+                  Tippe hier dein Manuskript…
+                </div>
+              )}
+              <textarea
+                ref={inputRef}
+                value={text}
+                onChange={handleTextChange}
+                onKeyDown={handleKeyDown}
+                maxLength={MAX_CHARS}
+                aria-label="Schreibmaschinen-Eingabe"
                 style={{
+                  width: "100%",
+                  minHeight: "100%",
                   padding: `${PAPER_PAD_V}px 26px`,
-                  /* DYNAMISCHE TEXTFARBE */
+                  background: "transparent",
+                  border: "none",
+                  outline: "none",
+                  resize: "none",
                   color: PAPER_STYLES[paperType].textColor || "#2a2020",
+                  fontFamily: "'Special Elite','Courier New',monospace",
+                  fontSize: "clamp(9px,1.5vw,12px)",
+                  lineHeight: `${LINE_HEIGHT}px`,
+                  letterSpacing: "0.04em",
+                  whiteSpace: "pre-wrap",
+                  wordBreak: "break-word",
+                  overflowY: "hidden", // Wir wollen, dass das Elternelement scrollt
+                  caretColor:
+                    paperType === "blueprint" ? "#fff" : "rgba(180,100,100,.6)",
                 }}
-              >
-                {text.length === 0 ? (
-                  <div
-                    style={{
-                      fontFamily: "'Special Elite','Courier New',monospace",
-                      fontSize: "clamp(9px,1.5vw,12px)",
-                      lineHeight: `${LINE_HEIGHT}px`,
-                      color:
-                        paperType === "blueprint"
-                          ? "rgba(255,255,255,0.3)"
-                          : "rgba(190,170,155,.5)",
-                      fontStyle: "italic",
-                      pointerEvents: "none",
-                      userSelect: "none",
-                    }}
-                  >
-                    Tippe hier dein Manuskript…
-                  </div>
-                ) : (
-                  <div
-                    style={{
-                      fontFamily: "'Special Elite','Courier New',monospace",
-                      fontSize: "clamp(9px,1.5vw,12px)",
-                      lineHeight: `${LINE_HEIGHT}px`,
-                      letterSpacing: "0.04em",
-                      whiteSpace: "pre-wrap",
-                      wordBreak: "break-word",
-                    }}
-                  >
-                    {text}
-                    <span
-                      style={{
-                        display: "inline-block",
-                        width: 2,
-                        height: "1em",
-                        background:
-                          paperType === "blueprint"
-                            ? "#fff"
-                            : "rgba(180,100,100,.6)",
-                        marginLeft: 1,
-                        verticalAlign: "text-bottom",
-                        animation: "tw-cursor-blink 1s step-end infinite",
-                      }}
-                    />
-                  </div>
-                )}
-              </div>
+              />
             </div>
 
             {/* Walzen-Schatten */}
