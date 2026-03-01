@@ -2,7 +2,7 @@ function App() {
   return (
     <div className="min-h-screen w-full flex items-center justify-center p-8">
       {/* Das "Papier" in der Schreibmaschine */}
-      <div className="bg-vintage-paper w-full max-w-2xl min-h-[500px] shadow-2xl p-12 relative border-t-[30px] border-gray-300">
+      <div className="bg-vintage-paper w-full max-w-2xl min-h-125 shadow-2xl p-12 relative border-t-30 border-gray-300">
         <h1 className="font-typewriter text-4xl mb-8 text-typewriter-dark border-b border-gray-400 pb-2">
           Vintage Typewriter
         </h1>
