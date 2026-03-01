@@ -58,6 +58,29 @@ function App() {
     }
   }, []);
 
+  const saveNoteToBackend = async (currentText: string) => {
+    if (!currentText.trim()) return;
+
+    try {
+      const response = await fetch("http://localhost:5000/api/notes", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          content: currentText,
+          title: "Manuskript_" + new Date().toLocaleTimeString(),
+        }),
+      });
+
+      if (response.ok) {
+        console.log("💾 Notiz erfolgreich im Archiv gesichert!");
+      }
+    } catch (error) {
+      console.error("Fehler beim Sichern der Notiz:", error);
+    }
+  };
+
   // ── Keyboard input ──────────────────────────────────────────────────────
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -74,7 +97,7 @@ function App() {
         setText((t) => t + "\n");
         setCarriageReturn((n) => n + 1);
         flashKey("Enter");
-        // auto-scroll fires via useEffect below
+        saveNoteToBackend(text + "\n");
         return;
       }
 
