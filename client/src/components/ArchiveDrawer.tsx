@@ -9,63 +9,31 @@ export interface Note {
 }
 
 export function noteTitle(content: string): string {
-  const first = content.trim().split("\n")[0] || "Untitled";
-  return first.length > 38 ? first.slice(0, 38) + "…" : first;
+  const first = content.trim().split("\n")[0] || "UNTITLED";
+  return first.length > 38
+    ? first.slice(0, 38).toUpperCase() + "..."
+    : first.toUpperCase();
 }
+
 export function fmtDate(iso: string): string {
   const d = new Date(iso);
-  return d.toLocaleDateString("de-DE", {
-    day: "2-digit",
-    month: "short",
-    year: "2-digit",
-  });
+  return d
+    .toLocaleDateString("en-US", {
+      day: "2-digit",
+      month: "short",
+      year: "2-digit",
+    })
+    .toUpperCase();
 }
 
+// Minimalist muted palette for tabs, derived from previous colors
 const TAB_COLORS = [
-  "#F4A0A0",
-  "#A0C4F4",
-  "#B8F4C0",
-  "#F4D4A0",
-  "#C4A0F4",
-  "#F4A0D4",
-  "#A0EAF4",
-  "#D4F4A0",
+  "#E8E4DF", // Stone
+  "#D6C8BE", // Warm Grey
+  "#F4C2C2", // Soft Pink (Accentuating)
+  "#E0DED7", // Sage
+  "#F5F2ED", // Linen
 ];
-
-// ── Wood grain CSS (repeating gradients, no images) ───────────────────────────
-const WOOD_LIGHT = `
-  repeating-linear-gradient(
-    92deg,
-    rgba(0,0,0,0)      0px,  rgba(0,0,0,0)      18px,
-    rgba(0,0,0,0.025)  18px, rgba(0,0,0,0.025)  19px,
-    rgba(0,0,0,0)      19px, rgba(0,0,0,0)       32px,
-    rgba(255,255,255,0.04) 32px, rgba(255,255,255,0.04) 33px
-  ),
-  repeating-linear-gradient(
-    89deg,
-    rgba(0,0,0,0)      0px,  rgba(0,0,0,0)      44px,
-    rgba(0,0,0,0.018)  44px, rgba(0,0,0,0.018)  46px
-  ),
-  linear-gradient(180deg, #E8B870 0%, #D4A055 40%, #C89040 70%, #B87D35 100%)
-`;
-const WOOD_DARK = `
-  repeating-linear-gradient(
-    92deg,
-    rgba(0,0,0,0)      0px,  rgba(0,0,0,0)      18px,
-    rgba(0,0,0,0.04)   18px, rgba(0,0,0,0.04)   19px,
-    rgba(0,0,0,0)      19px, rgba(0,0,0,0)       32px,
-    rgba(255,255,255,0.03) 32px, rgba(255,255,255,0.03) 33px
-  ),
-  linear-gradient(180deg, #C89040 0%, #B07030 60%, #985E22 100%)
-`;
-const WOOD_SIDE = `
-  repeating-linear-gradient(
-    0deg,
-    rgba(0,0,0,0)      0px, rgba(0,0,0,0)      22px,
-    rgba(0,0,0,0.03)   22px, rgba(0,0,0,0.03)  23px
-  ),
-  linear-gradient(90deg, #B87030 0%, #A06020 100%)
-`;
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 interface ArchiveDrawerProps {
@@ -77,9 +45,9 @@ interface ArchiveDrawerProps {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-//  ArchiveDrawer — CSS wood card-box, front view, cards stacked inside.
-//  Closed: shows the box with card tops peeking out + "ARCHIV" brass plate.
-//  Open:   box lid flips open (CSS transform), cards become a scrollable list.
+//  ArchiveDrawer — CSS card-box, minimalist box front view.
+//  Closed: shows the box with card tops peeking out + clean text label.
+//  Open:   box expands, cards become a scrollable list.
 // ─────────────────────────────────────────────────────────────────────────────
 export default function ArchiveDrawer({
   archive,
@@ -90,17 +58,17 @@ export default function ArchiveDrawer({
 }: ArchiveDrawerProps) {
   const [open, setOpen] = useState(false);
 
-  const BOX_W = 220; // inner content width
-  const WALL = 14; // wood wall thickness
-  const CORNER = 10; // corner radius
+  // Layout constants
+  const BOX_W = 220; // content width
+  const CORNER = 2; // sharper corner radius
 
   return (
     <div
       style={{
         position: "absolute",
         top: 30,
-        right: -BOX_W - WALL * 2 - 16, // sits fully outside the typewriter
-        width: BOX_W + WALL * 2,
+        right: -BOX_W - 16, // fully outside the typewriter
+        width: BOX_W,
         zIndex: 20,
         cursor: "default",
       }}
@@ -112,205 +80,120 @@ export default function ArchiveDrawer({
           position: "relative",
           width: "100%",
           borderRadius: CORNER,
-          // Bottom wall (base)
-          background: WOOD_DARK,
+          // Bottom wall (base) - clean beige to match new sidebar
+          background: "#F9F7F2",
+          border: "1px solid #E8E4DF",
           boxShadow: `
-          0 12px 40px rgba(0,0,0,0.28),
-          0  4px 12px rgba(0,0,0,0.18),
-          inset 0 1px 0 rgba(255,255,255,0.18)
+          0 10px 30px rgba(0,0,0,0.03),
+          0 2px 8px rgba(0,0,0,0.02),
+          inset 0 1px 0 rgba(255,255,255,0.7)
         `,
-          padding: `${WALL}px ${WALL}px 0`,
+          overflow: "hidden", // Important for open/close animation
+          maxHeight: open ? 500 : 80,
+          transition:
+            "max-height 320ms cubic-bezier(0.25,0.8,0.25,1), background 320ms ease",
         }}
       >
-        {/* ── TOP EDGE / FRONT WALL (always visible) ── */}
-        {/* Left side wall */}
-        <div
-          style={{
-            position: "absolute",
-            top: 0,
-            left: 0,
-            width: WALL,
-            bottom: 0,
-            borderRadius: `${CORNER}px 0 0 ${CORNER}px`,
-            background: WOOD_SIDE,
-            boxShadow: "inset -2px 0 6px rgba(0,0,0,0.2)",
-          }}
-        />
-        {/* Right side wall */}
-        <div
-          style={{
-            position: "absolute",
-            top: 0,
-            right: 0,
-            width: WALL,
-            bottom: 0,
-            borderRadius: `0 ${CORNER}px ${CORNER}px 0`,
-            background: WOOD_SIDE,
-            boxShadow: "inset 2px 0 6px rgba(0,0,0,0.2)",
-          }}
-        />
-
-        {/* ── TOP RIM — the front-facing top edge of the box ── */}
+        {/* ── HEADER PLATE ── */}
         <div
           style={{
             position: "relative",
-            height: WALL + 4,
-            background: WOOD_LIGHT,
-            borderRadius: `${CORNER - 4}px ${CORNER - 4}px 0 0`,
-            borderBottom: "2px solid rgba(0,0,0,0.15)",
-            boxShadow: `
-            inset 0 3px 6px rgba(255,255,255,0.18),
-            0 2px 0 rgba(0,0,0,0.12)
-          `,
-            marginBottom: 0,
-            zIndex: 4,
+            height: 40,
+            background: "linear-gradient(180deg, #EDE3D8 0%, #E2D5C5 100%)",
+            borderBottom: "1px solid #C0B0A0",
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
-            padding: "0 10px",
+            padding: "0 15px",
+            zIndex: 4,
           }}
         >
-          {/* Brass label plate */}
+          {/* Label plate */}
           <div
             style={{
-              background: "linear-gradient(135deg, #D4AA50, #A07820, #C8A040)",
-              borderRadius: 2,
-              padding: "2px 10px",
-              border: "1px solid #886010",
-              boxShadow:
-                "inset 0 1px 0 rgba(255,220,100,.4), 0 1px 3px rgba(0,0,0,.35)",
+              background: "transparent",
               letterSpacing: "0.22em",
             }}
           >
             <span
               style={{
-                fontFamily: "'Special Elite','Courier New',monospace",
-                fontSize: 8,
-                color: "#FFF0C0",
+                fontFamily: "'Special Elite', serif",
+                fontSize: 10,
+                color: "#7A6050",
                 textTransform: "uppercase",
-                textShadow: "0 1px 1px rgba(0,0,0,.4)",
+                fontWeight: "bold",
               }}
             >
-              ARCHIV
+              ARCHIVE
             </span>
           </div>
 
-          {/* Toggle button */}
+          {/* Toggle button - cleaned up, no emoji */}
           <button
             onClick={() => setOpen((o) => !o)}
-            aria-label={open ? "Box schließen" : "Box öffnen"}
+            aria-label={open ? "Close Box" : "Open Box"}
             style={{
-              background: "none",
+              background: "transparent",
               border: "none",
               cursor: "pointer",
               padding: "0 2px",
               lineHeight: 1,
               outline: "none",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
             }}
           >
             <span
               style={{
-                fontSize: 13,
+                fontSize: 10,
                 color: "rgba(80,50,20,.55)",
                 display: "block",
                 transform: open ? "rotate(180deg)" : "rotate(0deg)",
                 transition: "transform 260ms ease",
               }}
             >
-              ▾
+              ▼
             </span>
           </button>
         </div>
 
-        {/* ── INNER CONTENT AREA ─────────────────────────────────────────────
-            Shows card tops when closed, full cards when open.
-        ──────────────────────────────────────────────────────────────────── */}
+        {/* ── INNER CONTENT AREA ── */}
         <div
           style={{
             // Inner floor of the box
-            background: `
-            repeating-linear-gradient(
-              90deg,
-              rgba(0,0,0,0)    0px, rgba(0,0,0,0)    28px,
-              rgba(0,0,0,0.02) 28px, rgba(0,0,0,0.02) 29px
-            ),
-            linear-gradient(180deg, #D4A050 0%, #C08030 100%)
-          `,
-            borderRadius: `0 0 ${CORNER - 4}px ${CORNER - 4}px`,
-            overflow: "hidden",
-            // Animate height open/close
-            maxHeight: open ? 500 : 60,
-            transition: "max-height 320ms cubic-bezier(0.25,0.8,0.25,1)",
+            background: open ? "#FFFFFF" : "transparent",
             position: "relative",
+            minHeight: 0,
+            transition: "background 320ms ease",
           }}
         >
-          {/* Inner back wall shadow */}
-          <div
-            style={{
-              position: "absolute",
-              top: 0,
-              left: 0,
-              right: 0,
-              height: 8,
-              background:
-                "linear-gradient(180deg, rgba(0,0,0,0.18), transparent)",
-              pointerEvents: "none",
-              zIndex: 3,
-            }}
-          />
-
-          {/* ── CLOSED VIEW: card tops peeking out of box ── */}
+          {/* ── CLOSED VIEW: minimalist card tops stack ── */}
           {!open && (
             <div
               style={{
-                padding: "8px 10px 4px",
+                padding: "15px 15px",
                 display: "flex",
                 flexDirection: "column",
-                gap: 3,
+                alignItems: "center",
+                gap: 2,
               }}
             >
-              {/* Show up to 7 card tops — each slightly offset for depth illusion */}
               {(archive.length > 0
-                ? archive.slice(0, 7)
-                : Array(4).fill(null)
-              ).map((note, i) => {
-                const color = note
-                  ? TAB_COLORS[i % TAB_COLORS.length]
-                  : `rgba(230,215,195,${0.7 - i * 0.12})`;
-                const isAct = note && activeNote === note.id;
-                return (
-                  <div
-                    key={i}
-                    style={{
-                      height: 7,
-                      borderRadius: "3px 3px 0 0",
-                      background: note
-                        ? `linear-gradient(90deg, ${color}EE 0%, ${color}88 60%, rgba(255,255,255,0.3) 100%)`
-                        : `rgba(240,228,210,${0.8 - i * 0.1})`,
-                      border: `1px solid ${note ? color + "AA" : "rgba(200,180,155,.4)"}`,
-                      borderBottom: "none",
-                      boxShadow: isAct
-                        ? `0 -1px 6px ${color}66, inset 0 1px 0 rgba(255,255,255,.5)`
-                        : "inset 0 1px 0 rgba(255,255,255,.35)",
-                      transform: `translateX(${(i % 2 === 0 ? 1 : -1) * 0.5}px)`,
-                    }}
-                  />
-                );
-              })}
-              {archive.length > 7 && (
+                ? archive.slice(0, 8)
+                : Array(3).fill(null)
+              ).map((_, i) => (
                 <div
+                  key={i}
                   style={{
-                    fontFamily: "'Special Elite','Courier New',monospace",
-                    fontSize: 8,
-                    color: "rgba(100,70,40,.5)",
-                    letterSpacing: "0.1em",
-                    textAlign: "center",
-                    paddingTop: 2,
+                    width: "30px",
+                    height: "2px",
+                    background: "#E8E4DF",
+                    borderRadius: "1px",
+                    opacity: 1 - i * 0.1,
                   }}
-                >
-                  +{archive.length - 7} mehr
-                </div>
-              )}
+                />
+              ))}
             </div>
           )}
 
@@ -322,17 +205,16 @@ export default function ArchiveDrawer({
                 style={{
                   maxHeight: 440,
                   overflowY: "auto",
-                  padding: "8px 0 6px",
-                  scrollbarWidth: "thin",
-                  scrollbarColor: "rgba(180,140,80,.4) transparent",
+                  padding: "15px 0 10px",
+                  scrollbarWidth: "none", // Hide scrollbar for minimalist look
                 }}
               >
                 {loading ? (
-                  <EmptyState text="Lade…" sub="" />
+                  <StatusMessage text="LOADING DATA" />
                 ) : archive.length === 0 ? (
-                  <EmptyState
-                    text="Noch nichts archiviert."
-                    sub="Strg+S oder ↑ Archivieren"
+                  <StatusMessage
+                    text="EMPTY ARCHIVE"
+                    sub="PRESS CTRL+S TO SAVE"
                   />
                 ) : (
                   archive.map((note, idx) => (
@@ -348,59 +230,26 @@ export default function ArchiveDrawer({
                   ))
                 )}
               </div>
-
-              {/* Box bottom inner edge */}
-              <div
-                style={{
-                  height: 8,
-                  background:
-                    "linear-gradient(180deg, rgba(0,0,0,.12), rgba(0,0,0,.06))",
-                  borderTop: "1px solid rgba(0,0,0,.1)",
-                }}
-              />
             </div>
           )}
         </div>
         {/* end inner content */}
-
-        {/* ── BOTTOM BASE — thick wood base plate ── */}
-        <div
-          style={{
-            height: WALL + 2,
-            background: WOOD_DARK,
-            borderRadius: `0 0 ${CORNER}px ${CORNER}px`,
-            borderTop: "2px solid rgba(0,0,0,.2)",
-            boxShadow: "inset 0 -2px 4px rgba(255,255,255,.06)",
-          }}
-        />
       </div>
       {/* end outer shell */}
-
-      {/* ── FLOOR SHADOW ── */}
-      <div
-        style={{
-          margin: "0 8%",
-          height: 6,
-          borderRadius: "0 0 50% 50%",
-          background:
-            "radial-gradient(ellipse at 50% 0%, rgba(0,0,0,0.18), transparent 70%)",
-        }}
-      />
     </div>
   );
 }
 
-// ─── Empty / Loading State ────────────────────────────────────────────────────
-function EmptyState({ text, sub }: { text: string; sub: string }) {
+// ─── Status Components ───────────────────────────────────────────────────────
+function StatusMessage({ text, sub }: { text: string; sub?: string }) {
   return (
-    <div style={{ padding: "14px 14px 10px" }}>
+    <div style={{ padding: "20px 15px", textAlign: "left" }}>
       <div
         style={{
-          fontFamily: "'Special Elite','Courier New',monospace",
+          fontFamily: "'Special Elite', serif",
           fontSize: 10,
-          color: "rgba(200,175,130,.8)",
+          color: "#A09A94",
           letterSpacing: "0.06em",
-          lineHeight: 1.65,
         }}
       >
         {text}
@@ -408,12 +257,11 @@ function EmptyState({ text, sub }: { text: string; sub: string }) {
       {sub && (
         <div
           style={{
-            marginTop: 5,
-            fontFamily: "'Special Elite','Courier New',monospace",
-            fontSize: 8,
-            color: "rgba(200,175,130,.5)",
+            marginTop: 8,
+            fontFamily: "'Special Elite', serif",
+            fontSize: 9,
+            color: "#C0B9B0",
             letterSpacing: "0.06em",
-            lineHeight: 1.6,
           }}
         >
           {sub}
@@ -455,87 +303,55 @@ function ArchiveCard({
       onMouseLeave={() => setHovered(false)}
       style={{
         position: "relative",
-        margin: `0 10px ${hovered ? 6 : 4}px`,
-        borderRadius: 3,
+        margin: `0 10px ${hovered ? 8 : 6}px`,
+        borderRadius: 2,
         cursor: "pointer",
         userSelect: "none",
         animation: `card-drop 160ms ${Math.min(index * 35, 280)}ms both`,
-        background: isActive
-          ? "linear-gradient(170deg,#FFF8F0,#FFF2E8)"
-          : hovered
-            ? "linear-gradient(170deg,#FFFDF8,#FFF9F2)"
-            : "linear-gradient(170deg,#FEFAF4,#F8F4EC)",
-        border: `1px solid ${isActive ? "rgba(244,160,160,.5)" : "rgba(180,165,145,.4)"}`,
+        background: isActive ? "#FFFFFF" : hovered ? "#FBFBF7" : "transparent",
+        border: isActive ? "1px solid #A09A94" : "1px solid #E8E4DF",
         boxShadow: hovered
-          ? "0 3px 10px rgba(0,0,0,.12), inset 0 1px 0 rgba(255,255,255,.9)"
+          ? "0 3px 10px rgba(0,0,0,0.03)"
           : isActive
-            ? "0 2px 8px rgba(244,160,160,.15), inset 0 1px 0 rgba(255,255,255,.8)"
-            : "0 1px 3px rgba(0,0,0,.08), inset 0 1px 0 rgba(255,255,255,.8)",
+            ? "0 2px 8px rgba(0,0,0,0.02)"
+            : "0 1px 3px rgba(0,0,0,0.01)",
         transition: "all 120ms ease",
         overflow: "hidden",
       }}
     >
-      {/* Colored tab strip */}
-      <div
-        style={{
-          height: 4,
-          background: isActive
-            ? `linear-gradient(90deg, ${tabColor}, ${tabColor}BB)`
-            : `linear-gradient(90deg, ${tabColor}99, ${tabColor}44)`,
-          transition: "background 120ms ease",
-        }}
-      />
-
-      {/* Ruled-line texture */}
+      {/* Minimal vertical color strip, derived from previous colors */}
       <div
         style={{
           position: "absolute",
-          inset: 0,
-          top: 4,
-          backgroundImage:
-            "repeating-linear-gradient(180deg, transparent 0px, transparent 13px, rgba(180,165,145,.09) 13px, rgba(180,165,145,.09) 14px)",
-          pointerEvents: "none",
+          left: 0,
+          top: 0,
+          bottom: 0,
+          width: 3,
+          background: tabColor,
+          opacity: isActive ? 1 : 0.4,
         }}
       />
 
-      <div style={{ padding: "7px 10px 8px", position: "relative" }}>
-        {/* Color dot */}
+      <div style={{ padding: "8px 10px 10px", paddingLeft: 12 }}>
+        {/* Title - DARKER FOR READABILITY */}
         <div
           style={{
-            position: "absolute",
-            top: 8,
-            right: hovered ? 22 : 8,
-            width: 6,
-            height: 6,
-            borderRadius: "50%",
-            background: tabColor,
-            opacity: isActive ? 1 : 0.45,
-            boxShadow: `0 0 5px ${tabColor}88`,
-            transition: "right 120ms ease",
-          }}
-        />
-
-        {/* Title */}
-        <div
-          style={{
-            fontFamily: "'Special Elite','Courier New',monospace",
+            fontFamily: "'Special Elite', serif",
             fontSize: 10,
-            fontWeight: 700,
-            color: isActive ? "#A85858" : hovered ? "#6A5048" : "#7A6050",
+            color: isActive ? "#4A4540" : "#605B56",
             letterSpacing: "0.03em",
-            lineHeight: 1.35,
-            paddingRight: 16,
-            marginBottom: 5,
+            lineHeight: 1.4,
+            marginBottom: 8,
             overflow: "hidden",
             display: "-webkit-box",
             WebkitLineClamp: 2,
-            WebkitBoxOrient: "vertical" as const,
+            WebkitBoxOrient: "vertical",
           }}
         >
-          {note.title || noteTitle(note.content)}
+          {noteTitle(note.content)}
         </div>
 
-        {/* Meta row */}
+        {/* Meta row - DARKER FOR READABILITY */}
         <div
           style={{
             display: "flex",
@@ -545,54 +361,32 @@ function ArchiveCard({
         >
           <span
             style={{
-              fontFamily: "'Special Elite','Courier New',monospace",
+              fontFamily: "'Special Elite', serif",
               fontSize: 8,
-              color: "rgba(120,100,85,.5)",
+              color: "#A09A94",
               letterSpacing: "0.1em",
-              textTransform: "uppercase",
             }}
           >
             {fmtDate(note.createdAt)}
           </span>
-          <span
-            style={{
-              fontFamily: "'Special Elite','Courier New',monospace",
-              fontSize: 7,
-              color: "rgba(120,100,85,.35)",
-              letterSpacing: "0.06em",
-            }}
-          >
-            {note.content.length}z
-          </span>
+          {hovered && (
+            <button
+              onClick={(e) => onDelete(note.id, e)}
+              aria-label="Delete Note"
+              style={{
+                background: "transparent",
+                border: "none",
+                color: "#C0B9B0", // muted, no emoji
+                fontSize: 10,
+                cursor: "pointer",
+                fontFamily: "'Special Elite', serif",
+              }}
+            >
+              DELETE
+            </button>
+          )}
         </div>
       </div>
-
-      {/* Delete button */}
-      {hovered && (
-        <button
-          onClick={(e) => onDelete(note.id, e)}
-          aria-label="Notiz löschen"
-          style={{
-            position: "absolute",
-            top: 8,
-            right: 7,
-            width: 15,
-            height: 15,
-            borderRadius: "50%",
-            background: "rgba(200,140,140,.18)",
-            border: "1px solid rgba(200,140,140,.35)",
-            color: "rgba(180,90,90,.7)",
-            fontSize: 9,
-            lineHeight: 1,
-            cursor: "pointer",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
-          ×
-        </button>
-      )}
     </div>
   );
 }
