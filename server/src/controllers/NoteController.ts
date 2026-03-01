@@ -20,18 +20,17 @@ export class NoteController {
       const newNote = await noteService.createNote(content, title);
       res.status(201).json(newNote);
     } catch (error) {
-      res.status(500).json({ error: "Speichern fehlgeschlagen." });
+      res.status(500).json({ error: "Failed to save note." });
     }
   }
 
   public async getAllNotes(req: Request, res: Response): Promise<void> {
     try {
-      // Wir sagen TS: Das Ergebnis ist ein Array von INote
       const notes: INote[] =
         (await noteService.getAllNotes()) as unknown as INote[];
       res.json(notes);
     } catch (error) {
-      res.status(500).json({ error: "Fehler beim Laden." });
+      res.status(500).json({ error: "Failed to load notes." });
     }
   }
 
@@ -39,9 +38,9 @@ export class NoteController {
     try {
       const id = req.params.id as string;
       await noteService.deleteNote(id);
-      res.status(200).json({ message: "Notiz vernichtet." });
+      res.status(200).json({ message: "Note deleted successfully." });
     } catch (error) {
-      res.status(500).json({ error: "Löschen fehlgeschlagen." });
+      res.status(500).json({ error: "Failed to delete note." });
     }
   }
 
@@ -51,11 +50,10 @@ export class NoteController {
       const notes: INote[] =
         (await noteService.getAllNotes()) as unknown as INote[];
 
-      // Jetzt weiß TS genau, was 'n' ist: Ein Objekt mit einer 'id'
       const note = notes.find((n: INote) => n.id === id);
 
       if (!note) {
-        res.status(404).send("Manuskript nicht im Archiv gefunden.");
+        res.status(404).send("Manuscript not found in archive.");
         return;
       }
 
@@ -67,7 +65,7 @@ export class NoteController {
       res.setHeader("Content-Type", "text/plain");
       res.send(note.content);
     } catch (error) {
-      res.status(500).send("Download fehlgeschlagen.");
+      res.status(500).send("Download failed.");
     }
   }
 }
