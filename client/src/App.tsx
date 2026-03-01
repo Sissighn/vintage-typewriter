@@ -3,6 +3,8 @@ import Typewriter from "./components/Typewriter";
 import ArchiveDrawer from "./components/ArchiveDrawer";
 import type { Note } from "./components/ArchiveDrawer";
 import { useTypewriterSound } from "./hooks/useTypewriterSound";
+import PaperSidebar from "./components/PaperSidebar";
+import { PAPER_STYLES } from "./config/paperStyles";
 
 const MAX_CHARS = 2000;
 const LINE_HEIGHT = 23;
@@ -10,15 +12,18 @@ const PAPER_VISIBLE_LINES = 8;
 const PAPER_PAD_V = 22;
 const PAPER_H = PAPER_VISIBLE_LINES * LINE_HEIGHT + PAPER_PAD_V * 2;
 
+// Nutze Port 5001, um den AirPlay-Konflikt auf dem Mac zu vermeiden
+const API_URL = "http://localhost:5001/api/notes";
+
 export default function App() {
   const { playKeySound } = useTypewriterSound();
 
-  // ── Typewriter state ───────────────────────────────────────────────────────
+  // ── HOOKS (Müssen immer am Anfang der Funktion stehen!) ──────────
   const [text, setText] = useState("");
   const [pressedKey, setPressedKey] = useState("");
   const [carriageReturn, setCarriageReturn] = useState(0);
+  const [paperType, setPaperType] = useState<string>("classic");
 
-  // ── Archive state ──────────────────────────────────────────────────────────
   const [archive, setArchive] = useState<Note[]>([]);
   const [activeNote, setActiveNote] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -28,13 +33,12 @@ export default function App() {
   const paperScrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
-  // ── Init ───────────────────────────────────────────────────────────────────
+  // ── INIT ──────────────────────────────────────────────────────────
   useEffect(() => {
     inputRef.current?.focus();
-  }, []);
 
-  useEffect(() => {
-    fetch("/api/notes")
+    // Notizen vom Backend laden
+    fetch(API_URL)
       .then((r) => r.json())
       .then((data: Note[]) => {
         setArchive(data);
@@ -43,7 +47,7 @@ export default function App() {
       .catch(() => setLoading(false));
   }, []);
 
-  // ── Paper auto-scroll ──────────────────────────────────────────────────────
+  // ── Papier auto-scroll ───────────────────────────────────────────
   const autoScrollPaper = useCallback(() => {
     const el = paperScrollRef.current;
     if (!el || el.scrollHeight <= el.clientHeight) return;
@@ -51,26 +55,30 @@ export default function App() {
       el.scrollTop = el.scrollHeight;
     }, 260);
   }, []);
+
   useEffect(() => {
     autoScrollPaper();
   }, [text, autoScrollPaper]);
 
-  // ── Key flash ──────────────────────────────────────────────────────────────
+  // ── Key flash ────────────────────────────────────────────────────
   const flashKey = useCallback((k: string) => {
     setPressedKey(k);
     setTimeout(() => setPressedKey(""), 120);
   }, []);
 
-  // ── Save note ──────────────────────────────────────────────────────────────
+  // ── Save note ────────────────────────────────────────────────────
   const saveNote = useCallback(async () => {
     if (!text.trim() || saving) return;
     setSaving(true);
     setSaveMsg(null);
     try {
-      const res = await fetch("/api/notes", {
+      const res = await fetch(API_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ content: text }),
+        body: JSON.stringify({
+          content: text,
+          title: "Manuskript_" + new Date().toLocaleTimeString(),
+        }),
       });
       if (!res.ok) throw new Error();
       const saved: Note = await res.json();
@@ -85,7 +93,7 @@ export default function App() {
     }
   }, [text, saving]);
 
-  // ── Keyboard input ─────────────────────────────────────────────────────────
+  // ── Keyboard input ───────────────────────────────────────────────
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
       e.preventDefault();
@@ -122,7 +130,7 @@ export default function App() {
     [text, flashKey, saveNote, playKeySound],
   );
 
-  // ── Screen-key clicks ──────────────────────────────────────────────────────
+  // ── Screen-key clicks ────────────────────────────────────────────
   const handleKeyClick = useCallback(
     (value: string, type: "char" | "key") => {
       if (type === "char") {
@@ -150,7 +158,7 @@ export default function App() {
     [flashKey, playKeySound],
   );
 
-  // ── Archive handlers ───────────────────────────────────────────────────────
+  // ── Archive handlers ─────────────────────────────────────────────
   const loadNote = useCallback((note: Note) => {
     setText(note.content);
     setActiveNote(note.id);
@@ -161,7 +169,7 @@ export default function App() {
     async (id: string, e: React.MouseEvent) => {
       e.stopPropagation();
       try {
-        await fetch(`/api/notes/${id}`, { method: "DELETE" });
+        await fetch(`${API_URL}/${id}`, { method: "DELETE" });
         setArchive((prev) => prev.filter((n) => n.id !== id));
         if (activeNote === id) setActiveNote(null);
       } catch {}
@@ -171,7 +179,7 @@ export default function App() {
 
   const focusInput = () => inputRef.current?.focus();
 
-  // ─── RENDER ────────────────────────────────────────────────────────────────
+  // ─── RENDER ──────────────────────────────────────────────────────
   return (
     <div
       className="min-h-screen flex flex-col items-center justify-center py-8 px-4 overflow-x-hidden overflow-y-auto selection:bg-pink-200"
@@ -193,10 +201,10 @@ export default function App() {
         }
       `}</style>
 
-      {/* Hidden textarea */}
+      {/* Verstecktes Eingabefeld für Tastatur-Events */}
       <textarea
         ref={inputRef}
-        aria-label="Type your text here"
+        aria-label="Schreibmaschinen-Eingabe"
         onKeyDown={handleKeyDown}
         readOnly
         style={{
@@ -239,23 +247,31 @@ export default function App() {
         </p>
       </header>
 
-      {/* ── STAGE: typewriter centered, drawer floats absolute to the right ── */}
+      {/* ── HAUPT-LAYOUT (Sidebars + Schreibmaschine) ── */}
       <div
         style={{
           position: "relative",
-          width: "100%",
-          maxWidth: 780,
           display: "flex",
+          alignItems: "flex-start",
           justifyContent: "center",
+          width: "100%",
+          maxWidth: 1250,
+          gap: 0,
         }}
       >
-        {/* ── TYPEWRITER COLUMN ── */}
+        {/* LINKS: Papier-Konfigurator Sidebar */}
+        <PaperSidebar
+          currentType={paperType}
+          onTypeChange={(id) => setPaperType(id)}
+        />
+
+        {/* MITTE: Schreibmaschine */}
         <div
           className="relative w-full flex flex-col items-center"
-          style={{ maxWidth: 780 }}
+          style={{ maxWidth: 780, flex: "1 1 auto" }}
           onClick={focusInput}
         >
-          {/* ── PAPER ── */}
+          {/* ── PAPIER ── */}
           <div
             onClick={focusInput}
             style={{
@@ -276,31 +292,38 @@ export default function App() {
                 overflow: "auto",
                 border: "1px solid rgba(0,0,0,.06)",
                 borderBottom: "none",
-                background: `
-                repeating-linear-gradient(135deg,rgba(200,185,165,.045) 0px,rgba(200,185,165,.045) 1px,transparent 1px,transparent 9px),
-                repeating-linear-gradient(45deg, rgba(190,175,155,.03)  0px,rgba(190,175,155,.03)  1px,transparent 1px,transparent 12px),
-                repeating-linear-gradient(90deg, rgba(210,200,185,.025) 0px,rgba(210,200,185,.025) 1px,transparent 1px,transparent 18px),
-                linear-gradient(160deg,#FFFEF9 0%,#FAF8F2 45%,#F4F0E6 100%)
-              `,
+                /* DYNAMISCHES DESIGN BASIEREND AUF AUSWAHL */
+                background: PAPER_STYLES[paperType].background,
+                backgroundSize:
+                  PAPER_STYLES[paperType].backgroundSize || "auto",
                 boxShadow:
                   "0 6px 30px rgba(0,0,0,.09),0 1px 4px rgba(0,0,0,.05),inset 0 0 0 1px rgba(255,255,255,.75),inset 0 6px 14px rgba(0,0,0,.04)",
                 scrollbarWidth: "none",
               }}
             >
-              <div style={{ padding: `${PAPER_PAD_V}px 26px` }}>
+              <div
+                style={{
+                  padding: `${PAPER_PAD_V}px 26px`,
+                  /* DYNAMISCHE TEXTFARBE */
+                  color: PAPER_STYLES[paperType].textColor || "#2a2020",
+                }}
+              >
                 {text.length === 0 ? (
                   <div
                     style={{
                       fontFamily: "'Special Elite','Courier New',monospace",
                       fontSize: "clamp(9px,1.5vw,12px)",
                       lineHeight: `${LINE_HEIGHT}px`,
-                      color: "rgba(190,170,155,.5)",
+                      color:
+                        paperType === "blueprint"
+                          ? "rgba(255,255,255,0.3)"
+                          : "rgba(190,170,155,.5)",
                       fontStyle: "italic",
                       pointerEvents: "none",
                       userSelect: "none",
                     }}
                   >
-                    Type here…
+                    Tippe hier dein Manuskript…
                   </div>
                 ) : (
                   <div
@@ -308,7 +331,6 @@ export default function App() {
                       fontFamily: "'Special Elite','Courier New',monospace",
                       fontSize: "clamp(9px,1.5vw,12px)",
                       lineHeight: `${LINE_HEIGHT}px`,
-                      color: "#2a2020",
                       letterSpacing: "0.04em",
                       whiteSpace: "pre-wrap",
                       wordBreak: "break-word",
@@ -320,7 +342,10 @@ export default function App() {
                         display: "inline-block",
                         width: 2,
                         height: "1em",
-                        background: "rgba(180,100,100,.6)",
+                        background:
+                          paperType === "blueprint"
+                            ? "#fff"
+                            : "rgba(180,100,100,.6)",
                         marginLeft: 1,
                         verticalAlign: "text-bottom",
                         animation: "tw-cursor-blink 1s step-end infinite",
@@ -330,7 +355,8 @@ export default function App() {
                 )}
               </div>
             </div>
-            {/* Overlay shadows */}
+
+            {/* Walzen-Schatten */}
             <div
               style={{
                 position: "absolute",
@@ -345,35 +371,9 @@ export default function App() {
                 zIndex: 4,
               }}
             />
-            <div
-              style={{
-                position: "absolute",
-                top: 0,
-                left: 0,
-                bottom: 0,
-                width: 14,
-                background:
-                  "linear-gradient(90deg,rgba(0,0,0,.04),transparent)",
-                pointerEvents: "none",
-                zIndex: 4,
-              }}
-            />
-            <div
-              style={{
-                position: "absolute",
-                top: 0,
-                right: 0,
-                bottom: 0,
-                width: 14,
-                background:
-                  "linear-gradient(270deg,rgba(0,0,0,.03),transparent)",
-                pointerEvents: "none",
-                zIndex: 4,
-              }}
-            />
           </div>
 
-          {/* ── TYPEWRITER ILLUSTRATION ── */}
+          {/* ── SCHREIBMASCHINEN ILLUSTRATION ── */}
           <div style={{ position: "relative", zIndex: 0, width: "100%" }}>
             <Typewriter
               pressedKey={pressedKey}
@@ -382,7 +382,7 @@ export default function App() {
             />
           </div>
 
-          {/* ── SAVE BUTTON ── */}
+          {/* ── SPEICHER-BUTTON & STATUS ── */}
           <div
             style={{
               marginTop: 18,
@@ -395,7 +395,7 @@ export default function App() {
             <button
               onClick={saveNote}
               disabled={saving || !text.trim()}
-              aria-label="Notiz archivieren (Strg+S)"
+              aria-label="Manuskript archivieren"
               style={{
                 fontFamily: "'Special Elite','Courier New',monospace",
                 fontSize: 11,
@@ -413,28 +413,26 @@ export default function App() {
                   : "none",
               }}
             >
-              {saving ? "Speichern…" : "↑ Archivieren"}
+              {saving ? "Archiviere…" : "↑ In den Karteikasten"}
             </button>
 
             {saveMsg === "ok" && (
               <span
                 style={{
-                  fontFamily: "'Special Elite','Courier New',monospace",
+                  fontFamily: "'Special Elite', monospace",
                   fontSize: 10,
                   color: "#A8C8A0",
-                  letterSpacing: "0.15em",
                 }}
               >
-                ✓ Gespeichert
+                ✓ Archiviert
               </span>
             )}
             {saveMsg === "err" && (
               <span
                 style={{
-                  fontFamily: "'Special Elite','Courier New',monospace",
+                  fontFamily: "'Special Elite', monospace",
                   fontSize: 10,
                   color: "#C8A0A0",
-                  letterSpacing: "0.15em",
                 }}
               >
                 ✗ Fehler
@@ -442,9 +440,8 @@ export default function App() {
             )}
           </div>
         </div>
-        {/* end typewriter column */}
 
-        {/* ── ARCHIVE DRAWER — absolute, floats right of the typewriter, never overlaps ── */}
+        {/* RECHTS: Karteikasten (Archiv) */}
         <ArchiveDrawer
           archive={archive}
           loading={loading}
@@ -453,7 +450,6 @@ export default function App() {
           onDelete={deleteNote}
         />
       </div>
-      {/* end stage */}
     </div>
   );
 }
