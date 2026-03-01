@@ -1,0 +1,21 @@
+.appContainer {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1rem;
+  overflow-x: hidden;
+  overflow-y: auto;
+  background-color: #faf7f2;
+}
+
+.mainLayout {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  width: 100%;
+  max-width: 1250px;
+  gap: 0;
+}

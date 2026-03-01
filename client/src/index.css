@@ -23,3 +23,63 @@
     }
   }
 }
+
+@import url("https://fonts.googleapis.com/css2?family=Special+Elite&display=swap");
+
+/* Animations */
+@keyframes drawer-in {
+  from {
+    opacity: 0;
+    transform: translateX(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes card-drop {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes save-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.45;
+  }
+}
+
+/* Custom Scrollbars */
+.paper-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.cabinet-scroll::-webkit-scrollbar {
+  width: 4px;
+}
+.cabinet-scroll::-webkit-scrollbar-track {
+  background: rgba(180, 155, 135, 0.08);
+  border-radius: 2px;
+}
+.cabinet-scroll::-webkit-scrollbar-thumb {
+  background: rgba(180, 155, 135, 0.4);
+  border-radius: 2px;
+}
+
+/* Accessibility */
+@media (prefers-reduced-motion: reduce) {
+  [style*="save-pulse"] {
+    animation: none !important;
+    opacity: 1 !important;
+  }
+}

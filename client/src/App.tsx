@@ -9,7 +9,6 @@ import Header from "./components/Header";
 import PaperSidebar from "./components/PaperSidebar";
 import WritingArea from "./components/WritingArea";
 import styles from "./App.module.css";
-import "./styles/global.css";
 
 export default function App() {
   // -- CORE HOOKS --
