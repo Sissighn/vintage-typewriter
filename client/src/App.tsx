@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect, useCallback } from "react";
 import Typewriter from "./components/Typewriter";
 import ArchiveDrawer from "./components/ArchiveDrawer";
 import type { Note } from "./components/ArchiveDrawer";
+import { useTypewriterSound } from "./hooks/useTypewriterSound";
 
 const MAX_CHARS = 2000;
 const LINE_HEIGHT = 23;
@@ -10,6 +11,8 @@ const PAPER_PAD_V = 22;
 const PAPER_H = PAPER_VISIBLE_LINES * LINE_HEIGHT + PAPER_PAD_V * 2;
 
 export default function App() {
+  const { playKeySound } = useTypewriterSound();
+
   // ── Typewriter state ───────────────────────────────────────────────────────
   const [text, setText] = useState("");
   const [pressedKey, setPressedKey] = useState("");
@@ -89,6 +92,7 @@ export default function App() {
       if (e.key === "Backspace") {
         setText((t) => t.slice(0, -1));
         flashKey("Backspace");
+        playKeySound("Backspace");
         return;
       }
       if (e.key === "Enter") {
@@ -96,11 +100,13 @@ export default function App() {
         setText((t) => t + "\n");
         setCarriageReturn((n) => n + 1);
         flashKey("Enter");
+        playKeySound("Enter");
         return;
       }
       if (e.key === "Tab") {
         setText((t) => (t.length + 4 <= MAX_CHARS ? t + "    " : t));
         flashKey("Tab");
+        playKeySound("Tab");
         return;
       }
       if ((e.ctrlKey || e.metaKey) && e.key === "s") {
@@ -110,9 +116,10 @@ export default function App() {
       if (e.key.length === 1 && !e.ctrlKey && !e.metaKey) {
         setText((t) => (t.length < MAX_CHARS ? t + e.key : t));
         flashKey(e.key.toUpperCase());
+        playKeySound(e.key);
       }
     },
-    [text, flashKey, saveNote],
+    [text, flashKey, saveNote, playKeySound],
   );
 
   // ── Screen-key clicks ──────────────────────────────────────────────────────
@@ -121,22 +128,26 @@ export default function App() {
       if (type === "char") {
         setText((t) => (t.length < MAX_CHARS ? t + value : t));
         flashKey(value === " " ? " " : value.toUpperCase());
+        playKeySound(value);
       } else {
         if (value === "Backspace") {
           setText((t) => t.slice(0, -1));
           flashKey("Backspace");
+          playKeySound("Backspace");
         } else if (value === "Enter") {
           setText((t) => (t.length < MAX_CHARS ? t + "\n" : t));
           setCarriageReturn((n) => n + 1);
           flashKey("Enter");
+          playKeySound("Enter");
         } else if (value === "Tab") {
           setText((t) => (t.length + 4 <= MAX_CHARS ? t + "    " : t));
           flashKey("Tab");
+          playKeySound("Tab");
         }
       }
       inputRef.current?.focus();
     },
-    [flashKey],
+    [flashKey, playKeySound],
   );
 
   // ── Archive handlers ───────────────────────────────────────────────────────
