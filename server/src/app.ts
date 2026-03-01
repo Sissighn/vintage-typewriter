@@ -1,6 +1,6 @@
 import express, { Application } from "express";
 import dotenv from "dotenv";
-import cors from "cors"; // Installiere dies mit 'npm install cors @types/cors'
+import cors from "cors";
 import { NoteController } from "./controllers/NoteController";
 
 dotenv.config();
@@ -20,7 +20,7 @@ class App {
   }
 
   private initializeMiddlewares(): void {
-    this.app.use(cors()); // Erlaubt deinem Frontend den Zugriff auf das Backend
+    this.app.use(cors());
     this.app.use(express.json());
   }
 
