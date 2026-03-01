@@ -165,17 +165,32 @@ export default function App() {
     setTimeout(() => inputRef.current?.focus(), 50);
   }, []);
 
-  const deleteNote = useCallback(
-    async (id: string, e: React.MouseEvent) => {
-      e.stopPropagation();
-      try {
-        await fetch(`${API_URL}/${id}`, { method: "DELETE" });
+  const deleteNote = async (id: string, e: React.MouseEvent) => {
+    e.stopPropagation(); // Verhindert, dass die Notiz gleichzeitig geladen wird
+
+    if (!window.confirm("Are you sure you want to destroy this manuscript?"))
+      return;
+
+    try {
+      // WICHTIG: Port 5001 nutzen
+      const response = await fetch(`http://localhost:5001/api/notes/${id}`, {
+        method: "DELETE",
+      });
+
+      if (response.ok) {
+        // Notiz aus dem lokalen Speicher (State) entfernen
         setArchive((prev) => prev.filter((n) => n.id !== id));
-        if (activeNote === id) setActiveNote(null);
-      } catch {}
-    },
-    [activeNote],
-  );
+
+        // Falls die gelöschte Notiz gerade auf dem Papier liegt, das Papier leeren
+        if (activeNote === id) {
+          setText("");
+          setActiveNote(null);
+        }
+      }
+    } catch (error) {
+      console.error("Failed to delete from archive:", error);
+    }
+  };
 
   const focusInput = () => inputRef.current?.focus();
 
