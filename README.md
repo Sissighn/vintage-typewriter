@@ -1,5 +1,15 @@
 # Vintage Typewriter
 
+![React](https://img.shields.io/badge/Frontend-React-61DAFB?logo=react&logoColor=white)
+![Vite](https://img.shields.io/badge/Build-Vite-646CFF?logo=vite&logoColor=white)
+![TailwindCSS](https://img.shields.io/badge/Styling-TailwindCSS-38BDF8?logo=tailwindcss&logoColor=white)
+![TypeScript](https://img.shields.io/badge/Language-TypeScript-3178C6?logo=typescript&logoColor=white)
+![Node.js](https://img.shields.io/badge/Backend-Node.js-339933?logo=node.js&logoColor=white)
+![Express](https://img.shields.io/badge/Framework-Express-black?logo=express&logoColor=white)
+![Prisma](https://img.shields.io/badge/ORM-Prisma-2D3748?logo=prisma&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/Database-PostgreSQL-4169E1?logo=postgresql&logoColor=white)
+![Docker](https://img.shields.io/badge/Infrastructure-Docker-2496ED?logo=docker&logoColor=white)
+
 A full-stack mechanical writing simulation designed to provide a realistic analog experience within a modern web environment. This project demonstrates advanced React patterns, custom hook architecture, and robust backend integration.
 
 ## Project Overview
