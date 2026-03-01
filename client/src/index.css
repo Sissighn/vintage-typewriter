@@ -1,0 +1,11 @@
+@import "tailwindcss";
+
+/* Dein Vintage-Styling bleibt */
+body {
+  background-color: #1a1a1a;
+  margin: 0;
+  display: flex;
+  place-items: center;
+  min-width: 320px;
+  min-height: 100vh;
+}
