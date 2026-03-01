@@ -1,3 +1,4 @@
+// File: client/src/components/PaperSidebar.tsx
 import React, { useState } from "react";
 import { PAPER_STYLES } from "../config/paperStyles";
 
@@ -13,76 +14,90 @@ export default function PaperSidebar({
   const [open, setOpen] = useState(false);
 
   return (
-    <div
+    <aside
       style={{
         position: "fixed",
         left: 0,
-        top: 20,
-        zIndex: 20,
-        width: open ? 180 : 52,
-        transition: "width 300ms ease",
+        top: 0,
+        bottom: 0,
+        width: open ? 220 : 60,
+        transition: "width 400ms cubic-bezier(0.2, 0, 0, 1)",
+        zIndex: 100,
+        display: "flex",
+        flexDirection: "column",
+        background: "#F9F7F2",
+        borderRight: "1px solid #E8E4DF",
+        boxShadow: open ? "10px 0 30px rgba(0,0,0,0.02)" : "none",
       }}
     >
-      <div
+      {/* Menu Toggle */}
+      <button
+        onClick={() => setOpen(!open)}
         style={{
           width: "100%",
-          minHeight: 340,
-          borderRadius: "0 6px 6px 0",
-          border: "1.5px solid #C0B0A0",
-          borderLeft: "none",
-          background: "linear-gradient(160deg, #F2EBE0 0%, #E8DDD0 100%)",
-          boxShadow: "2px 6px 20px rgba(0,0,0,0.1)",
-          overflow: "hidden",
+          padding: "40px 0",
+          background: "transparent",
+          border: "none",
+          borderBottom: "1px solid #E8E4DF",
+          cursor: "pointer",
+          fontFamily: "'Special Elite', serif",
+          fontSize: "10px",
+          letterSpacing: "0.3em",
+          color: "#A09A94",
+          textAlign: "center",
         }}
       >
-        <button
-          onClick={() => setOpen(!open)}
+        {open ? "CLOSE" : "MENU"}
+      </button>
+
+      {open && (
+        <div
           style={{
-            width: "100%",
-            padding: "12px 0",
-            background: "linear-gradient(180deg, #EDE3D8 0%, #E2D5C5 100%)",
-            border: "none",
-            borderBottom: "1.5px solid #C0B0A0",
-            cursor: "pointer",
-            fontFamily: "'Special Elite', monospace",
-            color: "#7A6050",
+            padding: "30px 20px",
+            display: "flex",
+            flexDirection: "column",
+            gap: "20px",
+            animation: "drawer-in 0.4s ease-out",
           }}
         >
-          {open ? "❮ PAPIER" : "📄"}
-        </button>
-        {open && (
-          <div
+          <p
             style={{
-              padding: "10px",
-              display: "flex",
-              flexDirection: "column",
-              gap: "8px",
+              fontFamily: "'Special Elite', serif",
+              fontSize: "9px",
+              color: "#C0B9B0",
+              letterSpacing: "0.2em",
+              marginBottom: "10px",
             }}
           >
-            {Object.values(PAPER_STYLES).map((style) => (
-              <button
-                key={style.id}
-                onClick={() => onTypeChange(style.id)}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "10px",
-                  padding: "8px",
-                  fontSize: "10px",
-                  fontFamily: "'Special Elite', monospace",
-                  background: currentType === style.id ? "#F4C2C2" : "white",
-                  color: currentType === style.id ? "white" : "#7A6050",
-                  border: "1px solid #C0B0A0",
-                  borderRadius: "4px",
-                  cursor: "pointer",
-                }}
-              >
-                <span>{style.icon}</span> {style.name}
-              </button>
-            ))}
-          </div>
-        )}
-      </div>
-    </div>
+            PAPER SELECTION
+          </p>
+
+          {Object.values(PAPER_STYLES).map((style) => (
+            <button
+              key={style.id}
+              onClick={() => onTypeChange(style.id)}
+              style={{
+                padding: "12px 0",
+                fontSize: "11px",
+                fontFamily: "'Special Elite', serif",
+                background: "transparent",
+                color: currentType === style.id ? "#605B56" : "#A09A94",
+                border: "none",
+                borderBottom:
+                  currentType === style.id
+                    ? "1px solid #605B56"
+                    : "1px solid transparent",
+                cursor: "pointer",
+                textAlign: "left",
+                transition: "all 0.3s ease",
+                opacity: currentType === style.id ? 1 : 0.6,
+              }}
+            >
+              {style.name}
+            </button>
+          ))}
+        </div>
+      )}
+    </aside>
   );
 }
