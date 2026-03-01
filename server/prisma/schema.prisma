@@ -1,0 +1,17 @@
+// Das ist dein Bauplan für die PostgreSQL Datenbank
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Note {
+  id        String   @id @default(uuid())
+  title     String   @default("Unbenanntes Manuskript")
+  content   String   @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
