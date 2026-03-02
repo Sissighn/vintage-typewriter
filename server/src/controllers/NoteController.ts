@@ -1,35 +1,30 @@
 import { Request, Response } from "express";
 import { NoteService } from "../services/NoteService";
 
-const noteService = new NoteService();
-
-// Wir definieren hier ein lokales Interface, das exakt zu deiner Note-Klasse
-// und deiner Datenbank passt. Das löst alle "implicitly any" Fehler sofort.
-interface INote {
-  id: string;
-  title: string;
-  content: string;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
 export class NoteController {
+  private readonly noteService: NoteService;
+
+  constructor() {
+    this.noteService = new NoteService();
+  }
+
   public async addNote(req: Request, res: Response): Promise<void> {
     try {
       const { content, title } = req.body;
-      const newNote = await noteService.createNote(content, title);
+      const newNote = await this.noteService.createNote(content, title);
       res.status(201).json(newNote);
     } catch (error) {
+      console.error("Failed to save note:", error);
       res.status(500).json({ error: "Failed to save note." });
     }
   }
 
-  public async getAllNotes(req: Request, res: Response): Promise<void> {
+  public async getAllNotes(_req: Request, res: Response): Promise<void> {
     try {
-      const notes: INote[] =
-        (await noteService.getAllNotes()) as unknown as INote[];
+      const notes = await this.noteService.getAllNotes();
       res.json(notes);
     } catch (error) {
+      console.error("Failed to load notes:", error);
       res.status(500).json({ error: "Failed to load notes." });
     }
   }
@@ -37,9 +32,10 @@ export class NoteController {
   public async deleteNote(req: Request, res: Response): Promise<void> {
     try {
       const id = req.params.id as string;
-      await noteService.deleteNote(id);
+      await this.noteService.deleteNote(id);
       res.status(200).json({ message: "Note deleted successfully." });
     } catch (error) {
+      console.error("Failed to delete note:", error);
       res.status(500).json({ error: "Failed to delete note." });
     }
   }
@@ -47,17 +43,13 @@ export class NoteController {
   public async downloadNote(req: Request, res: Response): Promise<void> {
     try {
       const id = req.params.id as string;
-      const notes: INote[] =
-        (await noteService.getAllNotes()) as unknown as INote[];
-
-      const note = notes.find((n: INote) => n.id === id);
+      const note = await this.noteService.getNoteById(id);
 
       if (!note) {
         res.status(404).send("Manuscript not found in archive.");
         return;
       }
 
-      // Wir nutzen hier die Daten des gefundenen Objekts
       res.setHeader(
         "Content-Disposition",
         `attachment; filename="${note.title}.txt"`,
@@ -65,6 +57,7 @@ export class NoteController {
       res.setHeader("Content-Type", "text/plain");
       res.send(note.content);
     } catch (error) {
+      console.error("Failed to download note:", error);
       res.status(500).send("Download failed.");
     }
   }
