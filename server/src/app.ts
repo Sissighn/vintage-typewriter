@@ -1,19 +1,17 @@
 import express, { Application } from "express";
 import dotenv from "dotenv";
 import cors from "cors";
-import { NoteController } from "./controllers/NoteController";
+import noteRoutes from "./routes/noteRoutes";
 
 dotenv.config();
 
 class App {
   public app: Application;
   public port: number;
-  private noteController: NoteController;
 
   constructor(port: number) {
     this.app = express();
     this.port = port;
-    this.noteController = new NoteController();
 
     this.initializeMiddlewares();
     this.initializeRoutes();
@@ -24,36 +22,23 @@ class App {
     this.app.use(express.json());
   }
 
-  // In server/src/app.ts
   private initializeRoutes(): void {
-    this.app.get("/", (req, res) => {
-      res.send("Der Vintage-Typewriter-Server ist bereit! ⌨️");
+    this.app.get("/", (_req, res) => {
+      res.send("Vintage Typewriter server is ready! ⌨️");
     });
 
-    // Wichtig: (req, res) => this.noteController.METHODE(req, res)
-    this.app.post("/api/notes", (req, res) =>
-      this.noteController.addNote(req, res),
-    );
-    this.app.get("/api/notes", (req, res) =>
-      this.noteController.getAllNotes(req, res),
-    );
-    this.app.delete("/api/notes/:id", (req, res) =>
-      this.noteController.deleteNote(req, res),
-    );
-    this.app.get("/api/notes/:id/download", (req, res) =>
-      this.noteController.downloadNote(req, res),
-    );
+    this.app.use("/api/notes", noteRoutes);
   }
 
   public listen(): void {
     this.app.listen(this.port, () => {
-      console.log(`--- Server läuft auf Port ${this.port} ---`);
+      console.log(`--- Server running on port ${this.port} ---`);
       console.log(
-        `--- API bereit unter http://localhost:${this.port}/api/notes ---`,
+        `--- API ready at http://localhost:${this.port}/api/notes ---`,
       );
     });
   }
 }
 
-const server = new App(Number(process.env.PORT) || 5000);
+const server = new App(Number(process.env.PORT) || 5001);
 server.listen();
