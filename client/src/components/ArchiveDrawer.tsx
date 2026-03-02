@@ -1,16 +1,12 @@
 import React, { useState } from "react";
 import styles from "./ArchiveDrawer.module.css";
+import type { Note } from "../types/note";
 import {
   formatNoteTitleForDisplay,
   formatDateForDisplay,
 } from "../utils/noteFormatters";
 
-export interface Note {
-  id: string;
-  title: string;
-  content: string;
-  createdAt: string;
-}
+export type { Note };
 
 const TAB_COLORS = ["#E8E4DF", "#D6C8BE", "#F4C2C2", "#E0DED7", "#F5F2ED"];
 
@@ -24,6 +20,7 @@ interface ArchiveDrawerProps {
 
 export default function ArchiveDrawer({
   archive,
+  loading,
   activeNote,
   onLoad,
   onDelete,
@@ -51,7 +48,9 @@ export default function ArchiveDrawer({
         <div className={styles.innerContent}>
           {open ? (
             <div className={`${styles.cabinetScroll} cabinet-scroll`}>
-              {archive.length === 0 ? (
+              {loading ? (
+                <p className={styles.noManuscripts}>LOADING ARCHIVE...</p>
+              ) : archive.length === 0 ? (
                 <p className={styles.noManuscripts}>NO MANUSCRIPTS FOUND</p>
               ) : (
                 archive.map((note, idx) => (
