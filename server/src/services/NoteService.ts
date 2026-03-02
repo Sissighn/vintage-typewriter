@@ -1,34 +1,35 @@
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient, Note } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
 export class NoteService {
-  /**
-   * Erstellt eine neue Notiz in der Datenbank.
-   */
-  public async createNote(content: string, title?: string) {
-    return await prisma.note.create({
+  /** Creates a new note in the database. */
+  public async createNote(content: string, title?: string): Promise<Note> {
+    return prisma.note.create({
       data: {
         content,
-        title: title || "Manuskript vom " + new Date().toLocaleDateString(),
+        title: title || `Manuscript from ${new Date().toLocaleDateString()}`,
       },
     });
   }
 
-  /**
-   * Holt alle Notizen, sortiert nach Datum.
-   */
-  public async getAllNotes() {
-    return await prisma.note.findMany({
+  /** Retrieves all notes, sorted by creation date (newest first). */
+  public async getAllNotes(): Promise<Note[]> {
+    return prisma.note.findMany({
       orderBy: { createdAt: "desc" },
     });
   }
 
-  /**
-   * Löscht eine Notiz anhand ihrer ID.
-   */
-  public async deleteNote(id: string) {
-    return await prisma.note.delete({
+  /** Retrieves a single note by ID, or null if not found. */
+  public async getNoteById(id: string): Promise<Note | null> {
+    return prisma.note.findUnique({
+      where: { id },
+    });
+  }
+
+  /** Deletes a note by ID. */
+  public async deleteNote(id: string): Promise<Note> {
+    return prisma.note.delete({
       where: { id },
     });
   }
