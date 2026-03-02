@@ -1,4 +1,4 @@
-// Das ist dein Bauplan für die PostgreSQL Datenbank
+// Database schema for the Vintage Typewriter application
 generator client {
   provider = "prisma-client-js"
 }
