@@ -3,7 +3,7 @@ import Header from "./components/Header";
 import PaperSidebar from "./components/PaperSidebar";
 import WritingArea from "./components/WritingArea";
 import ArchiveDrawer from "./components/ArchiveDrawer";
-import type { Note } from "./components/ArchiveDrawer";
+import type { Note } from "./types/note";
 
 // Logic Hooks
 import { useTypewriterSound } from "./hooks/useTypewriterSound";
