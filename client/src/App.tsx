@@ -1,18 +1,29 @@
 import React, { useState, useCallback, useEffect } from "react";
+import Header from "./components/Header";
+import PaperSidebar from "./components/PaperSidebar";
+import WritingArea from "./components/WritingArea";
 import ArchiveDrawer from "./components/ArchiveDrawer";
 import type { Note } from "./components/ArchiveDrawer";
+
+// Logic Hooks
 import { useTypewriterSound } from "./hooks/useTypewriterSound";
 import { useNotes } from "./hooks/useNotes";
 import { useEditor } from "./hooks/useEditor";
 
-import Header from "./components/Header";
-import PaperSidebar from "./components/PaperSidebar";
-import WritingArea from "./components/WritingArea";
+// Utilities & Styles
+import { downloadComponentAsImage } from "./utils/exportImage";
 import styles from "./App.module.css";
 
+/**
+ * Main Application Controller
+ * Orchestrates the state between the editor, the archive, and the UI.
+ * Copyright 2026 Setayesh Golshan.
+ */
 export default function App() {
   // -- CORE HOOKS --
   const { playKeySound } = useTypewriterSound();
+
+  // Custom hook managing persistence logic (Fetch, Save, Delete)
   const {
     archive,
     activeNote,
@@ -24,6 +35,7 @@ export default function App() {
     deleteNote: removeNote,
   } = useNotes();
 
+  // Custom hook managing editor mechanics (Keyboard, Cursor, Scrolling)
   const {
     text,
     setText,
@@ -40,15 +52,19 @@ export default function App() {
     saveNote: () => archiveNote(text),
   });
 
-  // -- STATE & UI --
+  // -- UI STATE --
   const [paperType, setPaperType] = useState<string>("classic");
 
-  // -- EFFECT: FOCUS ON START --
+  // -- EFFECTS --
   useEffect(() => {
     focusInput();
   }, [focusInput]);
 
-  // -- HANDLERS (Bridging hooks and UI) --
+  // -- HANDLERS --
+
+  /**
+   * Loads a specific manuscript from the archive onto the paper.
+   */
   const loadNote = useCallback(
     (note: Note) => {
       setText(note.content);
@@ -58,31 +74,47 @@ export default function App() {
     [setText, setActiveNote, focusInput],
   );
 
+  /**
+   * Removes a note from the database and clears the paper if it was active.
+   */
   const deleteNote = useCallback(
     async (id: string, e: React.MouseEvent) => {
-      e.stopPropagation(); // Prevent loading the note while deleting
+      e.stopPropagation();
       const wasActiveNote = await removeNote(id);
       if (wasActiveNote) {
-        setText(""); // Clear paper if the active note was deleted
+        setText("");
       }
     },
     [removeNote, setText],
   );
 
-  // -- RENDER --
+  /**
+   * Triggers the DOM-to-Image conversion for the current manuscript.
+   */
+  const handleExportImage = useCallback(() => {
+    if (!text.trim()) return;
+    const fileName = `Manuscript_${new Date().toISOString().slice(0, 10)}`;
+    downloadComponentAsImage("paper-sheet", fileName);
+  }, [text]);
+
   return (
     <div className={styles.appContainer} onClick={focusInput}>
+      {/* Note: Ensure styles.appContainer provides the pl-[60px] 
+          padding to accommodate the fixed PaperSidebar.
+      */}
+
       <Header />
 
-      {/* -- MAIN LAYOUT (Sidebars + Writing Area) -- */}
       <div className={styles.mainLayout}>
-        {/* LEFT: Paper Configurator Sidebar */}
+        {/* LEFT: Fixed Stationery Configurator */}
         <PaperSidebar
           currentType={paperType}
           onTypeChange={(id) => setPaperType(id)}
         />
 
-        {/* CENTER: Writing Area */}
+        {/* CENTER: Writing Area 
+            Contains the Paper (with id="paper-sheet") and the Typewriter illustration.
+        */}
         <WritingArea
           text={text}
           paperType={paperType}
@@ -90,16 +122,17 @@ export default function App() {
           carriageReturn={carriageReturn}
           saving={saving}
           saveMsg={saveMsg}
-          inputRef={inputRef}
-          paperScrollRef={paperScrollRef}
+          inputRef={inputRef as React.RefObject<HTMLTextAreaElement>}
+          paperScrollRef={paperScrollRef as React.RefObject<HTMLDivElement>}
           handleTextChange={handleTextChange}
           handleKeyDown={handleKeyDown}
           handleKeyClick={handleKeyClick}
-          saveNote={() => archiveNote(text)}
           focusInput={focusInput}
+          onSave={() => archiveNote(text)}
+          onExport={handleExportImage}
         />
 
-        {/* RIGHT: Archive Drawer */}
+        {/* RIGHT: Box-style Archive Drawer */}
         <ArchiveDrawer
           archive={archive}
           loading={loading}
