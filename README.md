@@ -9,6 +9,7 @@
 ![Prisma](https://img.shields.io/badge/ORM-Prisma-2D3748?logo=prisma&logoColor=white)
 ![PostgreSQL](https://img.shields.io/badge/Database-PostgreSQL-4169E1?logo=postgresql&logoColor=white)
 ![Docker](https://img.shields.io/badge/Infrastructure-Docker-2496ED?logo=docker&logoColor=white)
+![html2canvas](https://img.shields.io/badge/Export-html2canvas-orange?logo=html5&logoColor=white)
 
 A full-stack mechanical writing simulation designed to provide a realistic analog experience within a modern web environment. This project demonstrates advanced React patterns, custom hook architecture, and robust backend integration.
 
