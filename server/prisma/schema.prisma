@@ -1,4 +1,6 @@
 // Database schema for the Vintage Typewriter application
+// Copyright 2026 Setayesh Golshan. All Rights Reserved.
+
 generator client {
   provider = "prisma-client-js"
 }
@@ -8,10 +10,35 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model User {
+  id            String   @id @default(uuid())
+  email         String   @unique
+  name          String?
+  
+  // Stored as a secure hash (Argon2), never in plain text
+  passwordHash  String?
+  
+  // Unique ID from Google OAuth provider
+  googleId      String?  @unique
+  
+  // Profile picture URL from Google
+  avatar        String?
+
+  // Relation: A user can have many notes
+  notes         Note[]
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
 model Note {
   id        String   @id @default(uuid())
-  title     String   @default("Unbenanntes Manuskript")
+  title     String   @default("Untitled Manuscript")
   content   String   @db.Text
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  // Foreign key to the User model
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
