@@ -1,4 +1,11 @@
-import { useState, useRef, useEffect, useCallback } from "react";
+import {
+  useState,
+  useRef,
+  useEffect,
+  useCallback,
+  type ChangeEvent,
+  type KeyboardEvent,
+} from "react";
 import { MAX_CHARS } from "../config/editorConfig";
 
 interface EditorProps {
@@ -43,16 +50,18 @@ export function useEditor({ playKeySound, saveNote }: EditorProps) {
   }, []);
 
   // Textarea change handler
-  const handleTextChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    // Length check here also catches pasted text
-    if (e.target.value.length <= MAX_CHARS) {
-      setText(e.target.value);
-    }
-  };
+  const handleTextChange = useCallback(
+    (e: ChangeEvent<HTMLTextAreaElement>) => {
+      if (e.target.value.length <= MAX_CHARS) {
+        setText(e.target.value);
+      }
+    },
+    [],
+  );
 
   // Keyboard input handler
   const handleKeyDown = useCallback(
-    (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    (e: KeyboardEvent<HTMLTextAreaElement>) => {
       if (e.key === "Backspace") {
         flashKey("Backspace");
         playKeySound("Backspace");
@@ -162,7 +171,7 @@ export function useEditor({ playKeySound, saveNote }: EditorProps) {
     [text, flashKey, playKeySound],
   );
 
-  const focusInput = () => inputRef.current?.focus();
+  const focusInput = useCallback(() => inputRef.current?.focus(), []);
 
   return {
     text,

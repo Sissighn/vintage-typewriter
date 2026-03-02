@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import type { Note } from "../components/ArchiveDrawer";
+import type { Note } from "../types/note";
 import { API_URL } from "../config/editorConfig";
 import { generateNewNoteTitle } from "../utils/noteFormatters";
 
