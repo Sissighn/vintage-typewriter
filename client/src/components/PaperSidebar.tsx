@@ -1,5 +1,5 @@
 // File: client/src/components/PaperSidebar.tsx
-import React, { useState } from "react";
+import { useState } from "react";
 import { PAPER_STYLES } from "../config/paperStyles";
 
 interface PaperSidebarProps {

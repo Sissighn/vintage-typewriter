@@ -2,12 +2,7 @@ import React from "react";
 import Typewriter from "./Typewriter";
 import styles from "./WritingArea.module.css";
 import { PAPER_STYLES } from "../config/paperStyles";
-import {
-  MAX_CHARS,
-  LINE_HEIGHT,
-  PAPER_H,
-  PAPER_PAD_V,
-} from "../config/editorConfig";
+import { MAX_CHARS, PAPER_H, PAPER_PAD_V } from "../config/editorConfig";
 
 interface WritingAreaProps {
   // State

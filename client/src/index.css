@@ -1,6 +1,6 @@
 @import "tailwindcss";
 
-@theme {
+:root {
   --font-typewriter: "Special Elite", "Courier New", monospace;
 }
 
