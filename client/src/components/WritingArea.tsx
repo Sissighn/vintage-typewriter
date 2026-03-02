@@ -18,13 +18,14 @@ interface WritingAreaProps {
   saving: boolean;
   saveMsg: "ok" | "err" | null;
   // Refs
-  inputRef: React.Ref<HTMLTextAreaElement>;
-  paperScrollRef: React.Ref<HTMLDivElement>;
+  inputRef: React.RefObject<HTMLTextAreaElement>;
+  paperScrollRef: React.RefObject<HTMLDivElement>;
   // Handlers
   handleTextChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;
   handleKeyDown: (e: React.KeyboardEvent<HTMLTextAreaElement>) => void;
   handleKeyClick: (value: string, type: "char" | "key") => void;
-  saveNote: () => void;
+  onSave: () => void;
+  onExport: () => void; // New handler for image export
   focusInput: () => void;
 }
 
@@ -40,14 +41,16 @@ export default function WritingArea({
   handleTextChange,
   handleKeyDown,
   handleKeyClick,
-  saveNote,
+  onSave,
+  onExport,
   focusInput,
 }: WritingAreaProps) {
   return (
     <div className={styles.writingAreaContainer} onClick={focusInput}>
-      {/* -- PAPER -- */}
-      <div className={styles.paperContainer} onClick={focusInput}>
+      {/* -- PAPER SHEET -- */}
+      <div className={styles.paperContainer}>
         <div
+          id="paper-sheet" // Unique ID required for html2canvas capture
           ref={paperScrollRef}
           className={`${styles.paperScroll} paper-scroll`}
           style={{
@@ -61,15 +64,13 @@ export default function WritingArea({
               className={styles.placeholder}
               style={{
                 top: `${PAPER_PAD_V}px`,
-                fontSize: "clamp(9px,1.5vw,12px)",
-                lineHeight: `${LINE_HEIGHT}px`,
                 color:
                   paperType === "blueprint"
                     ? "rgba(255,255,255,0.3)"
-                    : "rgba(190,170,155,.5)",
+                    : "rgba(160,154,148,0.5)",
               }}
             >
-              Type your manuscript here...
+              Begin your manuscript...
             </div>
           )}
           <textarea
@@ -79,23 +80,18 @@ export default function WritingArea({
             onChange={handleTextChange}
             onKeyDown={handleKeyDown}
             maxLength={MAX_CHARS}
-            aria-label="Typewriter input"
+            aria-label="Manuscript input"
             style={{
               padding: `${PAPER_PAD_V}px 26px`,
-              color: PAPER_STYLES[paperType].textColor || "#2a2020",
-              fontSize: "clamp(9px,1.5vw,12px)",
-              lineHeight: `${LINE_HEIGHT}px`,
-              caretColor:
-                paperType === "blueprint" ? "#fff" : "rgba(180,100,100,.6)",
+              color: PAPER_STYLES[paperType].textColor || "#4A4540",
+              caretColor: paperType === "blueprint" ? "#fff" : "#4A4540",
             }}
           />
         </div>
-
-        {/* Roller Shadow */}
         <div className={styles.rollerShadow} />
       </div>
 
-      {/* -- TYPEWRITER ILLUSTRATION -- */}
+      {/* -- MECHANICAL ILLUSTRATION -- */}
       <div className={styles.typewriterIllustration}>
         <Typewriter
           pressedKey={pressedKey}
@@ -104,26 +100,33 @@ export default function WritingArea({
         />
       </div>
 
-      {/* -- SAVE BUTTON & STATUS -- */}
-      <div
-        className={styles.saveContainer}
-        onClick={(e) => e.stopPropagation()}
-      >
-        <button
-          className={`${styles.saveButton} ${saving ? styles.saving : ""}`}
-          onClick={saveNote}
-          disabled={saving || !text.trim()}
-          aria-label="Archive manuscript"
-        >
-          {saving ? "Archiving..." : "↑ Archive Manuscript"}
-        </button>
+      {/* -- ACTION FOOTER -- */}
+      <div className={styles.actionFooter} onClick={(e) => e.stopPropagation()}>
+        <div className={styles.buttonGroup}>
+          <button
+            className={`${styles.actionButton} ${styles.primaryButton} ${saving ? styles.saving : ""}`}
+            onClick={onSave}
+            disabled={saving || !text.trim()}
+          >
+            {saving ? "Archiving..." : "Add to Archive"}
+          </button>
 
-        {saveMsg === "ok" && (
-          <span className={styles.saveStatusOk}>✓ Archived</span>
-        )}
-        {saveMsg === "err" && (
-          <span className={styles.saveStatusErr}>✗ Error</span>
-        )}
+          <button
+            className={`${styles.actionButton} ${styles.secondaryButton}`}
+            onClick={onExport}
+            disabled={!text.trim()}
+          >
+            Download Image
+          </button>
+        </div>
+
+        {/* Status Indicators */}
+        <div className={styles.statusContainer}>
+          {saveMsg === "ok" && <span className={styles.statusOk}>✓ Saved</span>}
+          {saveMsg === "err" && (
+            <span className={styles.statusErr}>✗ Error</span>
+          )}
+        </div>
       </div>
     </div>
   );
