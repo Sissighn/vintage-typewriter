@@ -32,9 +32,7 @@ export default function ArchiveDrawer({
       className={`${styles.aside} ${open ? styles.open : ""}`}
       onClick={(e) => e.stopPropagation()}
     >
-      {/* ── MINIMALIST CARD BOX ── */}
       <div className={`${styles.cardBox} ${open ? styles.open : ""}`}>
-        {/* Box Top / Toggle */}
         <button onClick={() => setOpen(!open)} className={styles.toggleButton}>
           <span className={styles.toggleLabel}>
             {open ? "CLOSE" : "ARCHIVE"}
@@ -44,22 +42,20 @@ export default function ArchiveDrawer({
           </span>
         </button>
 
-        {/* Inner Content (The Cards) */}
         <div className={styles.innerContent}>
           {open ? (
             <div className={`${styles.cabinetScroll} cabinet-scroll`}>
               {loading ? (
                 <p className={styles.noManuscripts}>LOADING ARCHIVE...</p>
-              ) : archive.length === 0 ? (
+              ) : !Array.isArray(archive) || archive.length === 0 ? (
+                /* Falls archive kein Array ist, stürzen wir nicht ab! */
                 <p className={styles.noManuscripts}>NO MANUSCRIPTS FOUND</p>
               ) : (
                 archive.map((note, idx) => (
                   <div
                     key={note.id}
                     onClick={() => onLoad(note)}
-                    className={`${styles.noteCard} ${
-                      activeNote === note.id ? styles.active : ""
-                    }`}
+                    className={`${styles.noteCard} ${activeNote === note.id ? styles.active : ""}`}
                   >
                     <div
                       className={styles.noteTab}
@@ -89,17 +85,20 @@ export default function ArchiveDrawer({
               )}
             </div>
           ) : (
-            /* Closed State: Minimalist stacked card edges */
             <div className={styles.closedView}>
-              {Array.from({ length: Math.min(archive.length || 3, 6) }).map(
-                (_, i) => (
-                  <div
-                    key={i}
-                    className={styles.closedViewLine}
-                    style={{ opacity: 1 - i * 0.15 }}
-                  />
+              {/* Sicherstellen, dass archive existiert, bevor wir darauf zugreifen */}
+              {Array.from({
+                length: Math.min(
+                  Array.isArray(archive) ? archive.length : 0 || 3,
+                  6,
                 ),
-              )}
+              }).map((_, i) => (
+                <div
+                  key={i}
+                  className={styles.closedViewLine}
+                  style={{ opacity: 1 - i * 0.15 }}
+                />
+              ))}
             </div>
           )}
         </div>
