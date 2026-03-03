@@ -19,3 +19,30 @@
   max-width: 1250px;
   gap: 0;
 }
+
+.loadingScreen {
+  height: 100vh;
+  width: 100vw;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #fdfcfb; /* Cremeweiß */
+}
+
+.loadingText {
+  font-family: "Special Elite", serif;
+  font-size: 14px;
+  letter-spacing: 0.3em;
+  color: #a09a94; /* Gedämpftes Stein-Grau */
+  animation: pulse 2s infinite ease-in-out;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 0.5;
+  }
+  50% {
+    opacity: 1;
+  }
+}
