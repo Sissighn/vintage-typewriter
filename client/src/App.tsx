@@ -3,6 +3,8 @@ import Header from "./components/Header";
 import PaperSidebar from "./components/PaperSidebar";
 import WritingArea from "./components/WritingArea";
 import ArchiveDrawer from "./components/ArchiveDrawer";
+import AuthCard from "./components/AuthCard";
+import { useAuth } from "./context/AuthContext";
 import type { Note } from "./types/note";
 
 // Logic Hooks
@@ -17,9 +19,12 @@ import styles from "./App.module.css";
 /**
  * Main Application Controller
  * Orchestrates the state between the editor, the archive, and the UI.
- * Copyright 2026 Setayesh Golshan.
+ * Now featuring persistent authentication and secure route protection.
  */
 export default function App() {
+  // -- AUTHENTICATION STATE --
+  const { user, loading: authLoading } = useAuth(); //
+
   // -- CORE HOOKS --
   const { playKeySound } = useTypewriterSound();
 
@@ -27,7 +32,7 @@ export default function App() {
   const {
     archive,
     activeNote,
-    loading,
+    loading: notesLoading,
     saving,
     saveMsg,
     setActiveNote,
@@ -57,14 +62,14 @@ export default function App() {
 
   // -- EFFECTS --
   useEffect(() => {
-    focusInput();
-  }, [focusInput]);
+    // Only focus if the user is logged in
+    if (user) {
+      focusInput();
+    }
+  }, [user, focusInput]);
 
   // -- HANDLERS --
 
-  /**
-   * Loads a specific manuscript from the archive onto the paper.
-   */
   const loadNote = useCallback(
     (note: Note) => {
       setText(note.content);
@@ -74,9 +79,6 @@ export default function App() {
     [setText, setActiveNote, focusInput],
   );
 
-  /**
-   * Removes a note from the database and clears the paper if it was active.
-   */
   const deleteNote = useCallback(
     async (id: string, e: React.MouseEvent) => {
       e.stopPropagation();
@@ -88,21 +90,29 @@ export default function App() {
     [removeNote, setText],
   );
 
-  /**
-   * Triggers the DOM-to-Image conversion for the current manuscript.
-   */
   const handleExportImage = useCallback(() => {
     if (!text.trim()) return;
     const fileName = `Manuscript_${new Date().toISOString().slice(0, 10)}`;
     downloadComponentAsImage("paper-sheet", fileName);
   }, [text]);
 
+  // -- RENDER LOGIC: LOADING STATE --
+  if (authLoading) {
+    return (
+      <div className={styles.loadingScreen}>
+        <div className={styles.loadingText}>Initializing Stationery...</div>
+      </div>
+    );
+  }
+
+  // -- RENDER LOGIC: AUTH GUARD --
+  if (!user) {
+    return <AuthCard />; // Schreibmaschine bleibt versteckt bis zum Login
+  }
+
+  // -- MAIN UI (Authenticated) --
   return (
     <div className={styles.appContainer} onClick={focusInput}>
-      {/* Note: Ensure styles.appContainer provides the pl-[60px] 
-          padding to accommodate the fixed PaperSidebar.
-      */}
-
       <Header />
 
       <div className={styles.mainLayout}>
@@ -112,9 +122,7 @@ export default function App() {
           onTypeChange={(id) => setPaperType(id)}
         />
 
-        {/* CENTER: Writing Area 
-            Contains the Paper (with id="paper-sheet") and the Typewriter illustration.
-        */}
+        {/* CENTER: Writing Area */}
         <WritingArea
           text={text}
           paperType={paperType}
@@ -135,7 +143,7 @@ export default function App() {
         {/* RIGHT: Box-style Archive Drawer */}
         <ArchiveDrawer
           archive={archive}
-          loading={loading}
+          loading={notesLoading}
           activeNote={activeNote}
           onLoad={loadNote}
           onDelete={deleteNote}
