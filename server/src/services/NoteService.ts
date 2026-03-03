@@ -1,36 +1,43 @@
-import { PrismaClient, Note } from "@prisma/client";
+// server/src/services/NoteService.ts
+import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
 export class NoteService {
-  /** Creates a new note in the database. */
-  public async createNote(content: string, title?: string): Promise<Note> {
-    return prisma.note.create({
+  /**
+   * Erstellt eine neue Notiz und verknüpft sie mit der userId.
+   * Das sorgt für die Einhaltung der relationalen Integrität.
+   */
+  async createNote(userId: string, title: string, content: string) {
+    return await prisma.note.create({
       data: {
+        title: title || "Untitled Manuscript",
         content,
-        title: title || `Manuscript from ${new Date().toLocaleDateString()}`,
+        // Hier ist die Lösung: Wir verknüpfen die Notiz mit dem User
+        userId: userId,
       },
     });
   }
 
-  /** Retrieves all notes, sorted by creation date (newest first). */
-  public async getAllNotes(): Promise<Note[]> {
-    return prisma.note.findMany({
+  /**
+   * Holt nur die Notizen, die dem jeweiligen User gehören.
+   */
+  async getUserNotes(userId: string) {
+    return await prisma.note.findMany({
+      where: { userId },
       orderBy: { createdAt: "desc" },
     });
   }
 
-  /** Retrieves a single note by ID, or null if not found. */
-  public async getNoteById(id: string): Promise<Note | null> {
-    return prisma.note.findUnique({
-      where: { id },
-    });
-  }
-
-  /** Deletes a note by ID. */
-  public async deleteNote(id: string): Promise<Note> {
-    return prisma.note.delete({
-      where: { id },
+  /**
+   * Löscht eine Notiz, prüft aber vorher die Zugehörigkeit.
+   */
+  async deleteUserNote(id: string, userId: string) {
+    return await prisma.note.deleteMany({
+      where: {
+        id,
+        userId,
+      },
     });
   }
 }
