@@ -1,43 +1,49 @@
 import { useState, useEffect, useCallback } from "react";
 import type { Note } from "../types/note";
-import { API_URL } from "../config/editorConfig";
+import api from "../api/axiosInstance"; // WICHTIG: Nutze Axios für Cookies
+import { useAuth } from "../context/AuthContext"; //
 import { generateNewNoteTitle } from "../utils/noteFormatters";
 
 export function useNotes() {
-  const [archive, setArchive] = useState<Note[]>([]);
+  const { user } = useAuth(); // Hol dir den Login-Status
+  const [archive, setArchive] = useState<Note[]>([]); // Initialisiert als leeres Array []
   const [activeNote, setActiveNote] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saveMsg, setSaveMsg] = useState<"ok" | "err" | null>(null);
 
-  // Initial fetch for notes
+  // Notizen laden: Nur wenn ein User eingeloggt ist
   useEffect(() => {
-    fetch(API_URL)
-      .then((r) => r.json())
-      .then((data: Note[]) => {
-        setArchive(data);
-        setLoading(false);
+    if (!user) {
+      setArchive([]);
+      return;
+    }
+
+    setLoading(true);
+    api
+      .get("/notes")
+      .then((res) => {
+        // Sicherstellen, dass wir IMMER ein Array setzen
+        setArchive(Array.isArray(res.data) ? res.data : []);
       })
-      .catch(() => setLoading(false));
-  }, []);
+      .catch((err) => {
+        console.error("Fetch failed:", err);
+        setArchive([]);
+      })
+      .finally(() => setLoading(false));
+  }, [user]); // Reagiert auf Login/Logout
 
   const saveNote = useCallback(
     async (text: string) => {
-      if (!text.trim() || saving) return;
+      if (!text.trim() || saving || !user) return;
       setSaving(true);
       setSaveMsg(null);
       try {
-        const res = await fetch(API_URL, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            content: text,
-            title: generateNewNoteTitle(),
-          }),
+        const res = await api.post("/notes", {
+          content: text,
+          title: generateNewNoteTitle(),
         });
-        if (!res.ok) throw new Error();
-        const saved: Note = await res.json();
-        setArchive((prev) => [saved, ...prev]);
+        setArchive((prev) => [res.data, ...prev]);
         setSaveMsg("ok");
         setTimeout(() => setSaveMsg(null), 2000);
       } catch {
@@ -47,7 +53,7 @@ export function useNotes() {
         setSaving(false);
       }
     },
-    [saving],
+    [saving, user],
   );
 
   const deleteNote = useCallback(
@@ -56,21 +62,18 @@ export function useNotes() {
         return false;
 
       try {
-        const response = await fetch(`${API_URL}/${id}`, {
-          method: "DELETE",
-        });
-
-        if (response.ok) {
+        const response = await api.delete(`/notes/${id}`);
+        if (response.status === 200) {
           setArchive((prev) => prev.filter((n) => n.id !== id));
           if (activeNote === id) {
             setActiveNote(null);
-            return true; // Indicates that the active note was deleted
+            return true;
           }
         }
       } catch (error) {
         console.error("Failed to delete from archive:", error);
       }
-      return false; // Indicates active note was not deleted
+      return false;
     },
     [activeNote],
   );
