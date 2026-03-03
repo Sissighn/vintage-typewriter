@@ -3,6 +3,7 @@ import jwt from "jsonwebtoken";
 import { OAuth2Client } from "google-auth-library";
 import { PrismaClient } from "@prisma/client";
 import { hashPassword, verifyPassword } from "../utils/crypto";
+import { AuthRequest } from "../middleware/authMiddleware";
 
 const prisma = new PrismaClient();
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
@@ -157,4 +158,22 @@ export const googleLogin = async (req: Request, res: Response) => {
 export const logout = (req: Request, res: Response) => {
   res.clearCookie("token");
   res.json({ message: "Logged out successfully" });
+};
+
+/**
+ * Returns the currently authenticated user's data.
+ * This allows the frontend to persist sessions on refresh.
+ */
+export const getMe = async (req: AuthRequest, res: Response) => {
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: req.userId },
+      select: { id: true, email: true, name: true, avatar: true },
+    });
+
+    if (!user) return res.status(404).json({ message: "User not found" });
+    res.json(user);
+  } catch (error) {
+    res.status(500).json({ message: "Server error" });
+  }
 };
