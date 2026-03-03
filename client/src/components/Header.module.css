@@ -1,4 +1,6 @@
 .header {
+  position: relative; /* Wichtig für die absolute Positionierung des Logout-Bereichs */
+  padding: 20px 40px;
   margin-bottom: 28px;
   text-align: center;
 }
@@ -8,7 +10,7 @@
   font-size: clamp(22px, 4vw, 38px);
   letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: #f4a0a0;
+  color: #f4a0a0; /* Dein originaler Pink-Ton */
   margin: 0;
   line-height: 1;
 }
@@ -16,8 +18,60 @@
 .subtitle {
   font-family: "Special Elite", "Courier New", monospace;
   font-size: clamp(8px, 1.1vw, 10px);
-  color: rgba(180, 155, 140, 0.65);
+  color: rgba(180, 155, 140, 0.65); /* Dein originaler Untertitel-Ton */
   letter-spacing: 0.28em;
   text-transform: uppercase;
   margin: 6px 0 0;
+}
+
+/* -- NEUE AUTH-ELEMENTE -- */
+
+.userSection {
+  position: absolute;
+  right: 40px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.userInfo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.avatar {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 1px solid rgba(180, 155, 140, 0.3);
+  filter: grayscale(1); /* Hält den Look einheitlich */
+}
+
+.userName {
+  font-family: "Special Elite", monospace;
+  font-size: 10px;
+  color: rgba(180, 155, 140, 0.8);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.logoutBtn {
+  background: transparent;
+  border: 1px solid rgba(180, 155, 140, 0.4);
+  color: rgba(180, 155, 140, 0.7);
+  font-family: "Special Elite", monospace;
+  font-size: 9px;
+  letter-spacing: 0.15em;
+  padding: 6px 12px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border-radius: 2px;
+}
+
+.logoutBtn:hover {
+  border-color: #f4a0a0;
+  color: #f4a0a0;
 }
