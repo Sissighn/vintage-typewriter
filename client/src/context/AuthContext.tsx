@@ -60,8 +60,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
       // Erfolg: Lokalen Speicher leeren
       localStorage.removeItem(GUEST_STORAGE_KEY);
+      window.location.reload();
     } catch (err) {
       console.error("Migration failed:", err);
+      alert("Could not migrate notes. Please try again.");
     }
   };
 
