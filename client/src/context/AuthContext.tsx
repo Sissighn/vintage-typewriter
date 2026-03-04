@@ -12,6 +12,7 @@ interface AuthContextType {
   user: User | null;
   login: (credentials: object) => Promise<void>;
   register: (data: object) => Promise<void>;
+  loginWithGoogle: () => Promise<void>;
   logout: () => void;
   loading: boolean;
 }
@@ -56,8 +57,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     window.location.reload();
   };
 
+  const loginWithGoogle = async () => {
+    const res = await api.post("/auth/google");
+    setUser(res.data.user);
+  };
+
   return (
-    <AuthContext.Provider value={{ user, login, register, logout, loading }}>
+    <AuthContext.Provider
+      value={{ user, login, register, loginWithGoogle, logout, loading }}
+    >
       {children}
     </AuthContext.Provider>
   );
