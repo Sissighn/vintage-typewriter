@@ -10,16 +10,22 @@
 ![PostgreSQL](https://img.shields.io/badge/Database-PostgreSQL-4169E1?logo=postgresql&logoColor=white)
 ![Docker](https://img.shields.io/badge/Infrastructure-Docker-2496ED?logo=docker&logoColor=white)
 ![html2canvas](https://img.shields.io/badge/Export-html2canvas-orange?logo=html5&logoColor=white)
+![Argon2](https://img.shields.io/badge/Security-Argon2-9cf?logo=lock&logoColor=white)
+![CSS Modules](https://img.shields.io/badge/Styling-CSS_Modules-000000?logo=cssmodules&logoColor=white)
+![Google Cloud](https://img.shields.io/badge/Auth-Google_OAuth_2.0-4285F4?logo=google&logoColor=white)
 
-A full-stack mechanical writing simulation designed to provide a realistic analog experience within a modern web environment. This project demonstrates advanced React patterns, custom hook architecture, and robust backend integration.
+A full-stack mechanical writing simulation designed to provide a realistic analog experience within a modern web environment. This project demonstrates advanced React patterns, secure multi-provider authentication, and a hybrid persistence layer.
 
 ## Project Overview
 
-This application serves as a minimalist, focused writing station. It mimics the tactile nature of a vintage typewriter through precise input handling, spatialized audio, and mechanical carriage logic. Unlike simple text editors, this project manages complex state interactions between the keyboard engine, a dynamic stationery system, and a persistent database archive.
+This application serves as a minimalist, focused writing station. It mimics the tactile nature of a vintage typewriter through precise input handling and mechanical logic. Unlike simple text editors, this project manages complex state interactions between a multi-user authentication system, a dynamic stationery system, and a persistent database archive.
 
 ## Technical Features
 
-- **Mechanical Input Engine**: High-fidelity simulation of typewriter mechanics, including carriage returns, tab stops, and realistic backspacing.
+- **Multi-Provider Authentication**: Secure login via Google OAuth 2.0 or traditional Email/Password, managed through JWTs and protected HttpOnly cookies.
+- **Hybrid Persistence (Guest Mode)**: Full "Try-before-you-buy" experience. Guests can use the typewriter immediately (storing data in LocalStorage), while registered users sync to a PostgreSQL cloud database.
+- **Intelligent Data Migration**: Privacy-focused logic that allows users to "claim" their guest manuscripts after signing in, ensuring a seamless transition without data loss.
+- **Mechanical Input Engine**: High-fidelity simulation of typewriter mechanics, including carriage returns, tab stops, and spatialized mechanical sound effects.
 - **Stationery Management**: A dedicated configuration layer for dynamic CSS-driven paper textures and styles (Vintage Cream, Blueprint, Legal Pad, etc.).
 - **Persistent Manuscript Archive**: A custom-built filing box system for full CRUD operations (Create, Read, Update, Delete) on user manuscripts.
 - **Immersive Audio Hooks**: Custom hooks designed to trigger spatialized mechanical sound effects synchronized with user input.
@@ -30,6 +36,7 @@ This application serves as a minimalist, focused writing station. It mimics the 
 ### Frontend
 
 - **React (TypeScript)**: Core framework for UI and state management.
+- **Axios**: Centralized API instance with withCredentials for secure cookie-based sessions.
 - **Custom Hooks**: Implementation of the Separation of Concerns (SoC) principle through specialized logic hooks (`useTypewriterLogic`, `useNotesApi`).
 - **Vite**: High-performance build tool and development server.
 
@@ -38,10 +45,12 @@ This application serves as a minimalist, focused writing station. It mimics the 
 - **Node.js & Express**: TypeScript-based RESTful API.
 - **Prisma ORM**: Type-safe database access and automated schema migrations.
 - **PostgreSQL**: Relational database for persistent storage of manuscript data.
+- **Security**: Password hashing with Argon2, JWT session management, and CORS protection.
 
 ### Infrastructure
 
 - **Docker**: Containerization of the PostgreSQL environment for consistent development across platforms.
+- **Google Cloud Console**: OAuth 2.0 integration for secure social logins.
 
 ## Architecture and Problem Solving
 
@@ -50,12 +59,13 @@ This application serves as a minimalist, focused writing station. It mimics the 
 To ensure a portfolio-ready codebase, the application logic is decoupled from the view layer.
 
 - **Logic Layer**: Encapsulated in Custom Hooks. The UI components remain "dumb," only rendering data provided by the logic hooks.
-- **Network Layer**: Centralized API handling with built-in error management and loading states.
+- **Auth Layer**: Global state management via React Context API to handle user sessions across the entire app.
 
 ### Resolved Technical Challenges
 
-- **CORS Policy Resolution**: Implemented custom middleware configuration to handle cross-origin requests between the Vite dev server and the Express backend.
-- **Port Conflict Handling**: Resolved recurring `403 Forbidden` errors on macOS by migrating the backend listener from the occupied Port 5000 to Port 5001.
+- **Session Persistence**: Implemented a /auth/me endpoint to verify JWT cookies on page refresh, preventing accidental logouts.
+- **Privacy on Shared Devices**: Developed a permission-based migration prompt to prevent guest notes from being accidentally merged into the wrong user account.
+- **Cross-Origin Security**: Configured COOP (Cross-Origin-Opener-Policy) and CORS headers to allow secure Google OAuth popups on localhost.
 
 ## Installation and Setup
 
@@ -67,11 +77,21 @@ To ensure a portfolio-ready codebase, the application logic is decoupled from th
 
 ### 2. Environment Setup
 
-Configure a `.env` file in the `/server` directory:
+Configure a `.env` file in the `/client` and `/server` directory:
+
+#### Server (.env):
 
 ```env
 PORT=5001
-DATABASE_URL="postgresql://user:password@localhost:5432/typewriter_db?schema=public"
+DATABASE_URL="postgresql://user:password@localhost:5432/typewriter_db"
+JWT_SECRET="your_secret_key"
+GOOGLE_CLIENT_ID="your_google_id"
+```
+
+#### Client (.env):
+
+```env
+VITE_GOOGLE_CLIENT_ID="your_google_id"
 ```
 
 ### 3. Infrastructure Initialization
