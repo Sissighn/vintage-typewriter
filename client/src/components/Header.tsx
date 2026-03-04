@@ -1,41 +1,39 @@
+import React from "react";
 import { useAuth } from "../context/AuthContext";
 import styles from "./Header.module.css";
 
-/**
- * Header Component
- * Maintains the original centered design while adding user actions.
- * Copyright 2026 Setayesh Golshan.
- */
 export default function Header() {
-  const { user, logout } = useAuth(); // Zugriff auf die Auth-Daten
+  const { user, isGuest, logout } = useAuth();
 
   return (
     <header className={styles.header}>
-      {/* Zentraler Titel-Bereich (Design bleibt unverändert) */}
-      <div className={styles.logoWrapper}>
-        <h1 className={styles.title}>Vintage Typewriter</h1>
-        <p className={styles.subtitle}>Mechanical Typing Station // 2026</p>
-      </div>
+      {/* 1. Titel & Subtitle (Zentriert durch text-align: center im Header) */}
+      <h1 className={styles.title}>VINTAGE TYPEWRITER</h1>
+      <p className={styles.subtitle}>MECHANICAL TYPING STATION // 2026</p>
 
-      {/* Rechtsbündiger Benutzer-Bereich (wird nur angezeigt, wenn eingeloggt) */}
-      {user && (
-        <div className={styles.userSection}>
+      {/* 2. User Bereich (Absolut positioniert ganz rechts) */}
+      <div className={styles.userSection}>
+        {user ? (
           <div className={styles.userInfo}>
             {user.avatar && (
-              <img src={user.avatar} alt="Profile" className={styles.avatar} />
+              <img src={user.avatar} alt="Avatar" className={styles.avatar} />
             )}
-            <span className={styles.userName}>{user.name || "Writer"}</span>
+            <span className={styles.userName}>
+              {user.name || user.email.split("@")[0]}
+            </span>
+            <button onClick={logout} className={styles.logoutBtn}>
+              LOGOUT
+            </button>
           </div>
-
-          <button
-            onClick={logout}
-            className={styles.logoutBtn}
-            aria-label="Sign out"
-          >
-            LOGOUT
-          </button>
-        </div>
-      )}
+        ) : isGuest ? (
+          <div className={styles.userInfo}>
+            <span className={styles.userName}>GUEST MODE</span>
+            <button onClick={logout} className={styles.logoutBtn}>
+              EXIT
+            </button>
+          </div>
+        ) : null}
+      </div>
     </header>
   );
 }
