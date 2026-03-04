@@ -147,3 +147,21 @@
   color: #d1cdc7;
   letter-spacing: 0.2em;
 }
+
+.guestBtn {
+  margin-top: 15px;
+  background: transparent;
+  border: 1px solid #d1cdc7;
+  color: #a09a94;
+  padding: 8px 16px;
+  font-family: "Special Elite", serif;
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.guestBtn:hover {
+  border-color: #4a4540;
+  color: #4a4540;
+}
