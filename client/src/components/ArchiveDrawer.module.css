@@ -1,39 +1,41 @@
+/* ── DRAWER BASE ── */
 .aside {
   position: fixed;
   right: 0;
   top: 50%;
   transform: translateY(-50%);
   z-index: 100;
-  height: 400px;
+  height: 500px; /* Etwas höher für mehr Platz */
   transition: width 400ms cubic-bezier(0.2, 0, 0, 1);
   width: 60px;
 }
 
 .aside.open {
-  width: 240px;
+  width: 260px; /* Leicht verbreitert für bessere Lesbarkeit */
 }
 
 .cardBox {
   width: 100%;
   height: 100%;
-  background: #f9f7f2;
+  background: #fdfcfb; /* Hellerer Papier-Ton */
   border: 1px solid #e8e4df;
   border-radius: 2px;
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  transition: box-shadow 0.3s ease-in-out;
-  box-shadow: none;
+  transition: all 0.3s ease-in-out;
+  box-shadow: -5px 0 20px rgba(0, 0, 0, 0.02);
 }
 
 .cardBox.open {
-  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.05);
+  box-shadow: -10px 0 40px rgba(0, 0, 0, 0.06);
 }
 
+/* ── TOGGLE AREA ── */
 .toggleButton {
   height: 60px;
   width: 100%;
-  background: #f2eee9;
+  background: #f5f2ed;
   border: none;
   border-bottom: 1px solid #e8e4df;
   cursor: pointer;
@@ -42,11 +44,16 @@
   align-items: center;
   justify-content: center;
   gap: 4px;
+  transition: background 0.2s;
+}
+
+.toggleButton:hover {
+  background: #edeae4;
 }
 
 .toggleLabel {
   font-family: "Special Elite", serif;
-  font-size: 10px;
+  font-size: 9px;
   letter-spacing: 0.3em;
   color: #5d5750;
   font-weight: bold;
@@ -62,6 +69,69 @@
   transform: rotate(180deg);
 }
 
+/* ── MIGRATION ALERT (FIXED) ── */
+.migrationAlert {
+  background: #fffefc;
+  border: 1px dashed #d4a5a5; /* Dezenter Rot-Ton passend zum Header */
+  padding: 12px;
+  margin: 10px 10px 20px 10px;
+  border-radius: 2px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  animation: slideDown 0.4s ease-out;
+}
+
+.migrationText {
+  font-family: "Special Elite", serif;
+  font-size: 9px;
+  line-height: 1.4;
+  color: #4a4540;
+  text-align: center;
+  letter-spacing: 0.05em;
+}
+
+.migrationActions {
+  display: flex;
+  flex-direction: column; /* Buttons untereinander gegen Überlappung */
+  gap: 6px;
+}
+
+.migrationBtn {
+  background: #4a4540;
+  color: #fdfcfb;
+  border: none;
+  padding: 8px;
+  font-family: "Special Elite", serif;
+  font-size: 8px;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+  transition: background 0.2s;
+  text-transform: uppercase;
+}
+
+.migrationBtn:hover {
+  background: #2d2926;
+}
+
+.discardBtn {
+  background: transparent;
+  border: 1px solid #e8e4df;
+  color: #a09a94;
+  padding: 6px;
+  font-family: "Special Elite", serif;
+  font-size: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-transform: uppercase;
+}
+
+.discardBtn:hover {
+  color: #d4a5a5;
+  border-color: #d4a5a5;
+}
+
+/* ── CABINET / CARDS ── */
 .innerContent {
   flex: 1;
   position: relative;
@@ -71,31 +141,42 @@
 .cabinetScroll {
   height: 100%;
   overflow-y: auto;
-  padding: 15px 10px;
-  animation: drawer-in 0.4s ease-out;
+  padding: 15px 12px;
 }
 
-.noManuscripts {
-  font-family: "Special Elite", serif;
-  font-size: 9px;
-  color: #8a847e;
-  text-align: center;
-  margin-top: 20px;
+/* Custom Scrollbar für Zen-Look */
+.cabinetScroll::-webkit-scrollbar {
+  width: 4px;
+}
+.cabinetScroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+.cabinetScroll::-webkit-scrollbar-thumb {
+  background: #e8e4df;
+  border-radius: 10px;
 }
 
 .noteCard {
-  padding: 12px;
-  margin-bottom: 10px;
-  background: transparent;
+  padding: 14px;
+  margin-bottom: 12px;
+  background: #ffffff;
   border: 1px solid #edeae4;
   cursor: pointer;
   position: relative;
-  transition: all 0.2s;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.02);
+}
+
+.noteCard:hover {
+  transform: translateX(-4px);
+  border-color: #d6c8be;
+  box-shadow: -4px 4px 10px rgba(0, 0, 0, 0.04);
 }
 
 .noteCard.active {
-  background: #ffffff;
+  background: #fffefb;
   border-color: #5d5750;
+  border-width: 1px;
 }
 
 .noteTab {
@@ -103,48 +184,74 @@
   left: 0;
   top: 0;
   bottom: 0;
-  width: 3px;
+  width: 4px;
+  opacity: 0.7;
 }
 
 .noteTitle {
   font-family: "Special Elite", serif;
   font-size: 10px;
   color: #3d3834;
-  margin-bottom: 6px;
-  font-weight: bold;
+  margin-bottom: 8px;
+  line-height: 1.3;
+  word-break: break-word;
 }
 
 .noteMeta {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  border-top: 1px dashed #f0eeeb;
+  padding-top: 8px;
 }
 
 .noteDate {
   font-size: 8px;
-  color: #8a847e;
+  color: #a09a94;
   font-family: "Special Elite", serif;
+  letter-spacing: 0.05em;
 }
 
 .deleteButton {
   background: transparent;
   border: none;
   color: #d4a5a5;
-  font-size: 8px;
+  font-size: 7px;
+  letter-spacing: 0.1em;
   cursor: pointer;
   font-family: "Special Elite", serif;
+  opacity: 0.6;
+  transition: opacity 0.2s;
 }
 
+.deleteButton:hover {
+  opacity: 1;
+  text-decoration: underline;
+}
+
+/* ── CLOSED STATE ── */
 .closedView {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 6px;
-  padding-top: 20px;
+  gap: 8px;
+  padding-top: 30px;
 }
 
 .closedViewLine {
-  width: 30px;
-  height: 1px;
-  background: #d6c8be;
+  width: 25px;
+  height: 2px;
+  background: #e8e4df;
+  border-radius: 1px;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
