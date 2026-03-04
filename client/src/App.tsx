@@ -106,7 +106,8 @@ export default function App() {
   }
 
   // -- RENDER LOGIC: AUTH GUARD --
-  if (!user) {
+  const isGuest = !user; // Assuming a guest is defined as not being logged in
+  if (!user && !isGuest) {
     return <AuthCard />; // Schreibmaschine bleibt versteckt bis zum Login
   }
 
