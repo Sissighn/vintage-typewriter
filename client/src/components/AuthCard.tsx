@@ -5,7 +5,7 @@ import { GoogleLogin } from "@react-oauth/google";
 
 export default function AuthCard() {
   const [isLogin, setIsLogin] = useState(true);
-  const { login, register } = useAuth();
+  const { login, register, loginWithGoogle, continueAsGuest } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
@@ -29,8 +29,8 @@ export default function AuthCard() {
         {/* Google Login Section */}
         <div className={styles.googleWrapper}>
           <GoogleLogin
-            onSuccess={(res) =>
-              res.credential && console.log("Google login:", res.credential)
+            onSuccess={
+              (res) => res.credential && loginWithGoogle(res.credential) // Jetzt wird der Token wirklich verarbeitet
             }
             onError={() => console.log("Login Failed")}
             useOneTap
@@ -70,6 +70,14 @@ export default function AuthCard() {
             ? "Need an account? Register here."
             : "Already have an account? Sign in."}
         </div>
+
+        <button
+          type="button"
+          onClick={continueAsGuest}
+          className={styles.guestBtn}
+        >
+          CONTINUE AS GUEST
+        </button>
       </div>
     </div>
   );
