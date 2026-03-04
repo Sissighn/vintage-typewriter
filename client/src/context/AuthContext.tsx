@@ -10,9 +10,11 @@ interface User {
 
 interface AuthContextType {
   user: User | null;
+  isGuest: boolean;
   login: (credentials: object) => Promise<void>;
   register: (data: object) => Promise<void>;
-  loginWithGoogle: () => Promise<void>;
+  loginWithGoogle: (idToken: string) => Promise<void>;
+  continueAsGuest: () => void;
   logout: () => void;
   loading: boolean;
 }
@@ -23,15 +25,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
   const [user, setUser] = useState<User | null>(null);
+  const [isGuest, setIsGuest] = useState(false);
   const [loading, setLoading] = useState(true);
 
   // Check if user is already logged in on mount
   useEffect(() => {
     api
       .get("/auth/me")
-      .then((res) => setUser(res.data))
+      .then((res) => {
+        setUser(res.data);
+        setIsGuest(false);
+      })
       .catch((error) => {
-        // 401 is expected when no token exists — just set user to null
         if (error.response?.status === 401) {
           setUser(null);
         } else {
@@ -44,27 +49,48 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const login = async (credentials: object) => {
     const res = await api.post("/auth/login", credentials);
     setUser(res.data.user);
+    setIsGuest(false);
   };
 
   const register = async (data: object) => {
     const res = await api.post("/auth/register", data);
     setUser(res.data.user);
+    setIsGuest(false);
+  };
+
+  const loginWithGoogle = async (idToken: string) => {
+    const res = await api.post("/auth/google", { idToken });
+    setUser(res.data.user);
+  };
+
+  const continueAsGuest = () => {
+    setIsGuest(true);
+    setUser(null);
   };
 
   const logout = async () => {
-    await api.post("/auth/logout");
+    try {
+      await api.post("/auth/logout");
+    } catch (err) {
+      console.error("Logout error", err);
+    }
     setUser(null);
+    setIsGuest(false);
     window.location.reload();
-  };
-
-  const loginWithGoogle = async () => {
-    const res = await api.post("/auth/google");
-    setUser(res.data.user);
   };
 
   return (
     <AuthContext.Provider
-      value={{ user, login, register, loginWithGoogle, logout, loading }}
+      value={{
+        user,
+        isGuest,
+        login,
+        register,
+        loginWithGoogle,
+        continueAsGuest,
+        logout,
+        loading,
+      }}
     >
       {children}
     </AuthContext.Provider>
