@@ -19,11 +19,12 @@ import styles from "./App.module.css";
 /**
  * Main Application Controller
  * Orchestrates the state between the editor, the archive, and the UI.
- * Now featuring persistent authentication and secure route protection.
+ * Schützt die Schreibmaschine vor unbefugtem Zugriff.
  */
 export default function App() {
   // -- AUTHENTICATION STATE --
-  const { user, loading: authLoading } = useAuth(); //
+  // Wir holen den ECHTEN isGuest-Status aus dem Context
+  const { user, isGuest, loading: authLoading } = useAuth();
 
   // -- CORE HOOKS --
   const { playKeySound } = useTypewriterSound();
@@ -62,11 +63,11 @@ export default function App() {
 
   // -- EFFECTS --
   useEffect(() => {
-    // Only focus if the user is logged in
-    if (user) {
+    // Fokus setzen, sobald ein User oder Gast die App betritt
+    if (user || isGuest) {
       focusInput();
     }
-  }, [user, focusInput]);
+  }, [user, isGuest, focusInput]);
 
   // -- HANDLERS --
 
@@ -97,6 +98,7 @@ export default function App() {
   }, [text]);
 
   // -- RENDER LOGIC: LOADING STATE --
+  // Verhindert das Aufblinken der UI während des Session-Checks
   if (authLoading) {
     return (
       <div className={styles.loadingScreen}>
@@ -106,12 +108,12 @@ export default function App() {
   }
 
   // -- RENDER LOGIC: AUTH GUARD --
-  const isGuest = !user; // Assuming a guest is defined as not being logged in
+  // Zeige die AuthCard NUR, wenn kein User eingeloggt UND kein Gast-Modus aktiv ist
   if (!user && !isGuest) {
-    return <AuthCard />; // Schreibmaschine bleibt versteckt bis zum Login
+    return <AuthCard />;
   }
 
-  // -- MAIN UI (Authenticated) --
+  // -- MAIN UI (Sichtbar für eingeloggte User ODER Gäste) --
   return (
     <div className={styles.appContainer} onClick={focusInput}>
       <Header />
