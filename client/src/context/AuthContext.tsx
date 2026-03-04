@@ -17,6 +17,7 @@ interface AuthContextType {
   register: (data: object) => Promise<void>;
   loginWithGoogle: (idToken: string) => Promise<void>;
   continueAsGuest: () => void;
+  migrateGuestNotes: () => Promise<void>;
   logout: () => void;
   loading: boolean;
 }
@@ -86,8 +87,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     const res = await api.post("/auth/login", credentials);
     setUser(res.data.user);
     setIsGuest(false);
-    // Starte Migration nach erfolgreichem Login
-    await migrateGuestNotes();
   };
 
   const register = async (data: object) => {
@@ -131,6 +130,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         register,
         loginWithGoogle,
         continueAsGuest,
+        migrateGuestNotes,
         logout,
         loading,
       }}
