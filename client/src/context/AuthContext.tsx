@@ -1,6 +1,8 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import api from "../api/axiosInstance";
 
+const GUEST_STORAGE_KEY = "typewriter_guest_manuscripts";
+
 interface User {
   id: string;
   email: string;
@@ -28,6 +30,40 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const [isGuest, setIsGuest] = useState(false);
   const [loading, setLoading] = useState(true);
 
+  // --- HILFSFUNKTION: MIGRATION ---
+  /**
+   * Scannt den LocalStorage nach Gast-Notizen und lädt sie ins Backend hoch.
+   * Danach wird der lokale Speicher bereinigt.
+   */
+  const migrateGuestNotes = async () => {
+    const saved = localStorage.getItem(GUEST_STORAGE_KEY);
+    if (!saved) return;
+
+    try {
+      const guestNotes = JSON.parse(saved);
+      if (guestNotes.length === 0) return;
+
+      console.log(
+        `Migrating ${guestNotes.length} manuscripts to your account...`,
+      );
+
+      // Sende alle Notizen parallel an das Backend
+      await Promise.all(
+        guestNotes.map((note: any) =>
+          api.post("/notes", {
+            content: note.content,
+            title: note.title || "Migrated Manuscript",
+          }),
+        ),
+      );
+
+      // Erfolg: Lokalen Speicher leeren
+      localStorage.removeItem(GUEST_STORAGE_KEY);
+    } catch (err) {
+      console.error("Migration failed:", err);
+    }
+  };
+
   // Check if user is already logged in on mount
   useEffect(() => {
     api
@@ -50,17 +86,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     const res = await api.post("/auth/login", credentials);
     setUser(res.data.user);
     setIsGuest(false);
+    // Starte Migration nach erfolgreichem Login
+    await migrateGuestNotes();
   };
 
   const register = async (data: object) => {
     const res = await api.post("/auth/register", data);
     setUser(res.data.user);
     setIsGuest(false);
+    // Starte Migration nach Registrierung
+    await migrateGuestNotes();
   };
 
   const loginWithGoogle = async (idToken: string) => {
     const res = await api.post("/auth/google", { idToken });
     setUser(res.data.user);
+    setIsGuest(false);
+    // Auch beim Google-Login migrieren
+    await migrateGuestNotes();
   };
 
   const continueAsGuest = () => {
