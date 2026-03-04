@@ -1,8 +1,9 @@
 .header {
-  position: relative; /* Wichtig für die absolute Positionierung des Logout-Bereichs */
+  position: relative; /* WICHTIG: Referenz für .userSection */
   padding: 20px 40px;
   margin-bottom: 28px;
   text-align: center;
+  width: 100%;
 }
 
 .title {
@@ -24,22 +25,22 @@
   margin: 6px 0 0;
 }
 
-/* -- NEUE AUTH-ELEMENTE -- */
+/* -- AUTH-ELEMENTE GANZ RECHTS -- */
 
 .userSection {
   position: absolute;
-  right: 40px;
+  right: 40px; /* Schiebt alles an den rechten Rand */
   top: 50%;
-  transform: translateY(-50%);
+  transform: translateY(-50%); /* Zentriert die Box vertikal im Header */
   display: flex;
   align-items: center;
-  gap: 15px;
+  z-index: 10; /* Damit es über anderen Elementen bleibt */
 }
 
 .userInfo {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
 }
 
 .avatar {
@@ -47,7 +48,8 @@
   height: 24px;
   border-radius: 50%;
   border: 1px solid rgba(180, 155, 140, 0.3);
-  filter: grayscale(1); /* Hält den Look einheitlich */
+  filter: grayscale(1);
+  object-fit: cover;
 }
 
 .userName {
@@ -56,6 +58,7 @@
   color: rgba(180, 155, 140, 0.8);
   letter-spacing: 0.1em;
   text-transform: uppercase;
+  white-space: nowrap; /* Verhindert Zeilenumbruch bei langen Namen */
 }
 
 .logoutBtn {
