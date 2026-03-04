@@ -1,65 +1,93 @@
 import { useState, useEffect, useCallback } from "react";
 import type { Note } from "../types/note";
-import api from "../api/axiosInstance"; // WICHTIG: Nutze Axios für Cookies
-import { useAuth } from "../context/AuthContext"; //
+import api from "../api/axiosInstance";
+import { useAuth } from "../context/AuthContext";
 import { generateNewNoteTitle } from "../utils/noteFormatters";
 
+const GUEST_STORAGE_KEY = "typewriter_guest_manuscripts";
+
 export function useNotes() {
-  const { user } = useAuth(); // Hol dir den Login-Status
-  const [archive, setArchive] = useState<Note[]>([]); // Initialisiert als leeres Array []
+  const { user, isGuest } = useAuth(); //
+  const [archive, setArchive] = useState<Note[]>([]);
   const [activeNote, setActiveNote] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saveMsg, setSaveMsg] = useState<"ok" | "err" | null>(null);
 
-  // Notizen laden: Nur wenn ein User eingeloggt ist
+  // Notizen laden: Unterscheidung zwischen Cloud und Lokal
   useEffect(() => {
-    if (!user) {
+    if (isGuest) {
+      setLoading(true);
+      const saved = localStorage.getItem(GUEST_STORAGE_KEY);
+      setArchive(saved ? JSON.parse(saved) : []);
+      setLoading(false);
+    } else if (user) {
+      setLoading(true);
+      api
+        .get("/notes")
+        .then((res) => setArchive(Array.isArray(res.data) ? res.data : []))
+        .catch(() => setArchive([]))
+        .finally(() => setLoading(false));
+    } else {
       setArchive([]);
-      return;
     }
-
-    setLoading(true);
-    api
-      .get("/notes")
-      .then((res) => {
-        // Sicherstellen, dass wir IMMER ein Array setzen
-        setArchive(Array.isArray(res.data) ? res.data : []);
-      })
-      .catch((err) => {
-        console.error("Fetch failed:", err);
-        setArchive([]);
-      })
-      .finally(() => setLoading(false));
-  }, [user]); // Reagiert auf Login/Logout
+  }, [user, isGuest]);
 
   const saveNote = useCallback(
     async (text: string) => {
-      if (!text.trim() || saving || !user) return;
+      if (!text.trim() || saving) return;
       setSaving(true);
       setSaveMsg(null);
-      try {
-        const res = await api.post("/notes", {
+
+      if (isGuest) {
+        // GAST-LOGIK: Speichern im LocalStorage
+        const newGuestNote: Note = {
+          id: Date.now().toString(),
           content: text,
           title: generateNewNoteTitle(),
-        });
-        setArchive((prev) => [res.data, ...prev]);
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          userId: "guest",
+        };
+        const updatedArchive = [newGuestNote, ...archive];
+        setArchive(updatedArchive);
+        localStorage.setItem(GUEST_STORAGE_KEY, JSON.stringify(updatedArchive));
         setSaveMsg("ok");
         setTimeout(() => setSaveMsg(null), 2000);
-      } catch {
-        setSaveMsg("err");
-        setTimeout(() => setSaveMsg(null), 2500);
-      } finally {
         setSaving(false);
+      } else if (user) {
+        // USER-LOGIK: Speichern in PostgreSQL
+        try {
+          const res = await api.post("/notes", {
+            content: text,
+            title: generateNewNoteTitle(),
+          });
+          setArchive((prev) => [res.data, ...prev]);
+          setSaveMsg("ok");
+          setTimeout(() => setSaveMsg(null), 2000);
+        } catch {
+          setSaveMsg("err");
+          setTimeout(() => setSaveMsg(null), 2500);
+        } finally {
+          setSaving(false);
+        }
       }
     },
-    [saving, user],
+    [saving, user, isGuest, archive],
   );
 
   const deleteNote = useCallback(
     async (id: string) => {
       if (!window.confirm("Are you sure you want to destroy this manuscript?"))
         return false;
+
+      if (isGuest) {
+        const updatedArchive = archive.filter((n) => n.id !== id);
+        setArchive(updatedArchive);
+        localStorage.setItem(GUEST_STORAGE_KEY, JSON.stringify(updatedArchive));
+        if (activeNote === id) setActiveNote(null);
+        return true;
+      }
 
       try {
         const response = await api.delete(`/notes/${id}`);
@@ -75,7 +103,7 @@ export function useNotes() {
       }
       return false;
     },
-    [activeNote],
+    [activeNote, isGuest, archive],
   );
 
   return {
