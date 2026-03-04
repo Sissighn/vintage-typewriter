@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import styles from "./ArchiveDrawer.module.css";
+import { useAuth } from "../context/AuthContext"; // Import für die User-Prüfung
 import type { Note } from "../types/note";
 import {
   formatNoteTitleForDisplay,
@@ -9,6 +10,7 @@ import {
 export type { Note };
 
 const TAB_COLORS = ["#E8E4DF", "#D6C8BE", "#F4C2C2", "#E0DED7", "#F5F2ED"];
+const GUEST_STORAGE_KEY = "typewriter_guest_manuscripts"; // Muss identisch zum Context sein
 
 interface ArchiveDrawerProps {
   archive: Note[];
@@ -26,6 +28,17 @@ export default function ArchiveDrawer({
   onDelete,
 }: ArchiveDrawerProps) {
   const [open, setOpen] = useState(true);
+  const { user, migrateGuestNotes } = useAuth(); // Zugriff auf Auth-Daten und Migration
+
+  /**
+   * Löscht die lokalen Gast-Notizen, falls der User sie nicht importieren möchte.
+   */
+  const handleDiscardGuestNotes = () => {
+    if (window.confirm("Do you want to permanently discard the guest notes?")) {
+      localStorage.removeItem(GUEST_STORAGE_KEY);
+      window.location.reload(); // Neuladen, um die UI zu aktualisieren
+    }
+  };
 
   return (
     <aside
@@ -45,10 +58,30 @@ export default function ArchiveDrawer({
         <div className={styles.innerContent}>
           {open ? (
             <div className={`${styles.cabinetScroll} cabinet-scroll`}>
+              {/* --- NEU: MIGRATIONS-BANNER --- */}
+              {user && localStorage.getItem(GUEST_STORAGE_KEY) && (
+                <div className={styles.migrationAlert}>
+                  <p className={styles.migrationText}>GUEST NOTES FOUND</p>
+                  <div className={styles.migrationActions}>
+                    <button
+                      onClick={migrateGuestNotes}
+                      className={styles.migrationBtn}
+                    >
+                      SAVE TO ACCOUNT
+                    </button>
+                    <button
+                      onClick={handleDiscardGuestNotes}
+                      className={styles.discardBtn}
+                    >
+                      DISCARD
+                    </button>
+                  </div>
+                </div>
+              )}
+
               {loading ? (
                 <p className={styles.noManuscripts}>LOADING ARCHIVE...</p>
               ) : !Array.isArray(archive) || archive.length === 0 ? (
-                /* Falls archive kein Array ist, stürzen wir nicht ab! */
                 <p className={styles.noManuscripts}>NO MANUSCRIPTS FOUND</p>
               ) : (
                 archive.map((note, idx) => (
@@ -86,7 +119,6 @@ export default function ArchiveDrawer({
             </div>
           ) : (
             <div className={styles.closedView}>
-              {/* Sicherstellen, dass archive existiert, bevor wir darauf zugreifen */}
               {Array.from({
                 length: Math.min(
                   Array.isArray(archive) ? archive.length : 0 || 3,
