@@ -28,38 +28,41 @@ const setAuthCookie = (res: Response, token: string) => {
 /**
  * Register a new user using Email and Password
  */
+// Ergänzung in der register-Funktion:
 export const register = async (req: Request, res: Response) => {
   try {
     const { email, password, name } = req.body;
 
-    // 1. Check if user already exists
-    const existingUser = await prisma.user.findUnique({ where: { email } });
-    if (existingUser) {
-      return res.status(400).json({ message: "Email already in use" });
+    // 1. Serverseitige Passwort-Validierung
+    const passwordRegex =
+      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{10,}$/;
+    if (!passwordRegex.test(password)) {
+      return res.status(400).json({
+        message: "PASSWORD DOES NOT MEET SECURITY REQUIREMENTS.",
+      });
     }
 
-    // 2. Hash the password securely with Argon2 + Pepper
-    const passwordHash = await hashPassword(password);
+    // 2. Prüfen, ob User existiert
+    const existingUser = await prisma.user.findUnique({ where: { email } });
+    if (existingUser) {
+      return res.status(400).json({ message: "EMAIL ALREADY IN USE." });
+    }
 
-    // 3. Create the user in database
+    // 3. Passwort hashen und User erstellen
+    const passwordHash = await hashPassword(password);
     const user = await prisma.user.create({
-      data: {
-        email,
-        passwordHash,
-        name,
-      },
+      data: { email, passwordHash, name },
     });
 
-    // 4. Generate token and set cookie
     const token = createToken(user.id);
     setAuthCookie(res, token);
 
     res.status(201).json({
-      message: "User registered successfully",
+      message: "USER REGISTERED SUCCESSFULLY",
       user: { id: user.id, email: user.email, name: user.name },
     });
   } catch (error) {
-    res.status(500).json({ message: "Registration failed", error });
+    res.status(500).json({ message: "REGISTRATION FAILED." });
   }
 };
 
