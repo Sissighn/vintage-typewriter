@@ -136,7 +136,7 @@ export default function AuthCard() {
               <div className={styles.strengthMeter}>
                 <div
                   className={`${styles.strengthBar} ${styles[`level${strength}`]}`}
-                  style={{ width: `${(strength / 4) * 100}%` }}
+                  style={{ width: `${Math.max((strength / 4) * 100, 5)}%` }} // Mindestens 5% Breite für Level 0
                 />
               </div>
             </div>
