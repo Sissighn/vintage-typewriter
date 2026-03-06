@@ -139,37 +139,40 @@
 }
 
 .strengthMeter {
-  height: 3px;
+  height: 4px;
   width: 100%;
   background: #f0eeeb;
-  border-radius: 1px;
+  border-radius: 2px;
   overflow: hidden;
+  margin-top: 8px;
+  border: 1px solid #e8e4df;
 }
 
 .strengthBar {
   height: 100%;
+  width: 0%; /* Standard */
   transition:
-    width 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+    width 0.4s ease,
     background-color 0.3s ease;
 }
 
 /* Farbstufen */
 .level0 {
   width: 5%;
-  background-color: #e8e4df;
+  background-color: #d8a37f;
 }
 .level1 {
-  background-color: #d4a5a5;
+  background-color: #d19696;
   opacity: 0.8;
 }
 .level2 {
-  background-color: #d6c8be;
+  background-color: #976a4b;
 }
 .level3 {
-  background-color: #a09a94;
+  background-color: #6f4b28;
 }
 .level4 {
-  background-color: #f4a0a0;
+  background-color: #470f0f;
   box-shadow: 0 0 8px rgba(244, 160, 160, 0.3);
 }
 
