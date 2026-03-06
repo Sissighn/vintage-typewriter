@@ -4,10 +4,8 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(232, 228, 223, 0.85); /* Warmer Stein-Ton mit Transparenz */
-  backdrop-filter: blur(
-    8px
-  ); /* Portfolio-Highlight: Moderner Glassmorphismus-Effekt */
+  background: rgba(232, 228, 223, 0.85);
+  backdrop-filter: blur(8px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -16,7 +14,7 @@
 }
 
 .authCard {
-  background: #fdfcfb; /* Leichtes Cremeweiß (Papier-Optik) */
+  background: #fdfcfb;
   padding: 40px;
   width: 100%;
   max-width: 420px;
@@ -30,16 +28,21 @@
   font-family: "Special Elite", serif;
   font-size: 18px;
   letter-spacing: 0.25em;
-  color: #4a4540; /* Slate / Charcoal */
-  margin-bottom: 12px;
+  color: #4a4540;
+  margin-bottom: 30px;
 }
 
-.subtitle {
+.errorMessage {
   font-family: "Special Elite", serif;
-  font-size: 11px;
-  color: #a09a94;
-  margin-bottom: 35px;
-  line-height: 1.6;
+  font-size: 9px;
+  color: #f4a0a0; /* Dein Akzent-Rot */
+  background: rgba(244, 160, 160, 0.05);
+  padding: 10px;
+  border: 1px dashed #f4a0a0;
+  margin-bottom: 20px;
+  letter-spacing: 0.05em;
+  line-height: 1.4;
+  animation: shake 0.3s ease-in-out;
 }
 
 .form {
@@ -64,12 +67,6 @@
   border-bottom-color: #4a4540;
 }
 
-.input::placeholder {
-  color: #d1cdc7;
-  font-size: 10px;
-  letter-spacing: 0.1em;
-}
-
 .submitBtn {
   margin-top: 15px;
   background: #4a4540;
@@ -90,6 +87,37 @@
   box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
 }
 
+.separator {
+  position: relative;
+  margin: 25px 0;
+  border-bottom: 1px solid #e8e4df;
+}
+
+.separatorText {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: #fdfcfb;
+  padding: 0 15px;
+  font-family: "Special Elite", serif;
+  font-size: 10px;
+  color: #d1cdc7;
+  letter-spacing: 0.2em;
+}
+
+.googleWrapper {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 25px;
+  filter: grayscale(1) contrast(0.8);
+  transition: filter 0.3s ease;
+}
+
+.googleWrapper:hover {
+  filter: none;
+}
+
 .toggle {
   margin-top: 25px;
   font-family: "Special Elite", serif;
@@ -98,11 +126,19 @@
   cursor: pointer;
   text-decoration: underline;
   text-underline-offset: 4px;
-  transition: color 0.2s ease;
 }
 
-.toggle:hover {
-  color: #4a4540;
+.guestBtn {
+  margin-top: 20px;
+  background: transparent;
+  border: 1px solid #d1cdc7;
+  color: #a09a94;
+  padding: 8px 16px;
+  font-family: "Special Elite", serif;
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+  width: 100%;
 }
 
 @keyframes fadeIn {
@@ -116,52 +152,15 @@
   }
 }
 
-.googleWrapper {
-  display: flex;
-  justify-content: center;
-  margin-bottom: 25px;
-  /* Sorgt dafür, dass der Google-Button die Zen-Ästhetik nicht bricht */
-  filter: grayscale(1) contrast(0.8);
-  transition: filter 0.3s ease;
-}
-
-.googleWrapper:hover {
-  filter: none;
-}
-
-.separator {
-  position: relative;
-  margin: 25px 0;
-  border-bottom: 1px solid #e8e4df; /* Zen-Stein-Linie */
-}
-
-.separatorText {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  background: #fdfcfb; /* Gleicher Hintergrund wie die Karte */
-  padding: 0 15px;
-  font-family: "Special Elite", serif;
-  font-size: 10px;
-  color: #d1cdc7;
-  letter-spacing: 0.2em;
-}
-
-.guestBtn {
-  margin-top: 15px;
-  background: transparent;
-  border: 1px solid #d1cdc7;
-  color: #a09a94;
-  padding: 8px 16px;
-  font-family: "Special Elite", serif;
-  font-size: 9px;
-  letter-spacing: 0.1em;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.guestBtn:hover {
-  border-color: #4a4540;
-  color: #4a4540;
+@keyframes shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-4px);
+  }
+  75% {
+    transform: translateX(4px);
+  }
 }
