@@ -4,15 +4,17 @@ import styles from "./AuthCard.module.css";
 import { GoogleLogin } from "@react-oauth/google";
 
 export default function AuthCard() {
+  // --- States ---
   const [isLogin, setIsLogin] = useState(true);
-  const { login, register, loginWithGoogle, continueAsGuest } = useAuth();
-
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  // Funktion zur Berechnung der Passwortstärke (0 bis 4)
+  const { login, register, loginWithGoogle, continueAsGuest } = useAuth();
+
+  // --- Logik: Passwortstärke & Validierung ---
   const getStrength = (pass: string) => {
     let score = 0;
     if (pass.length >= 10) score++;
@@ -24,19 +26,19 @@ export default function AuthCard() {
 
   const strength = getStrength(password);
 
-  // Validierungs-Logik: 10+ Zeichen, Groß/Klein, Zahl, Sonderzeichen
   const validatePassword = (pass: string) => {
     const regex =
       /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{10,}$/;
     return regex.test(pass);
   };
 
+  // --- Handlers ---
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     setLoading(true);
 
-    // Regeln nur bei Registrierung anwenden
+    // Validierung nur bei Registrierung
     if (!isLogin && !validatePassword(password)) {
       setError(
         "PASSWORD TOO WEAK: NEED 10+ CHARS, UPPER/LOWER CASE, NUMBER & SYMBOL.",
@@ -52,7 +54,6 @@ export default function AuthCard() {
         await register({ email, password, name: email.split("@")[0] });
       }
     } catch (err: any) {
-      // Fehler vom Backend abfangen
       setError(err.response?.data?.message || "AUTHENTICATION FAILED.");
     } finally {
       setLoading(false);
@@ -76,6 +77,7 @@ export default function AuthCard() {
           {isLogin ? "RESUME SESSION" : "CREATE ACCOUNT"}
         </h2>
 
+        {/* Google Login Bereich */}
         <div className={styles.googleWrapper}>
           <GoogleLogin
             onSuccess={handleGoogleSuccess}
@@ -91,7 +93,7 @@ export default function AuthCard() {
           <span className={styles.separatorText}>OR</span>
         </div>
 
-        {/* Fehleranzeige */}
+        {/* Fehlermeldungen */}
         {error && <div className={styles.errorMessage}>{error}</div>}
 
         <form onSubmit={handleSubmit} className={styles.form}>
@@ -104,21 +106,32 @@ export default function AuthCard() {
             required
             disabled={loading}
           />
-          <input
-            type="password"
-            placeholder="PASSWORD"
-            className={styles.input}
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            disabled={loading}
-          />
 
-          {/* Stärken-Indikator nur bei Registrierung anzeigen */}
+          <div className={styles.inputContainer}>
+            <input
+              type={showPassword ? "text" : "password"}
+              placeholder="PASSWORD"
+              className={styles.input}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              disabled={loading}
+            />
+            <button
+              type="button"
+              className={styles.toggleVisibility}
+              onClick={() => setShowPassword(!showPassword)}
+              tabIndex={-1}
+            >
+              {showPassword ? "HIDE" : "SHOW"}
+            </button>
+          </div>
+
+          {/* Stärken-Indikator (Nur bei Registrierung & wenn Passwort existiert) */}
           {!isLogin && password.length > 0 && (
             <div className={styles.strengthMeterContainer}>
               <div className={styles.strengthLabel}>
-                Security Level: {strength}/4
+                SECURITY LEVEL: {strength}/4
               </div>
               <div className={styles.strengthMeter}>
                 <div
@@ -134,12 +147,14 @@ export default function AuthCard() {
           </button>
         </form>
 
+        {/* Wechsel zwischen Login/Register */}
         <div
           className={styles.toggle}
           onClick={() => {
             setIsLogin(!isLogin);
             setError(null);
             setPassword("");
+            setShowPassword(false);
           }}
         >
           {isLogin
@@ -147,6 +162,7 @@ export default function AuthCard() {
             : "Already have an account? Sign in."}
         </div>
 
+        {/* Guest Mode */}
         <button
           type="button"
           onClick={continueAsGuest}
