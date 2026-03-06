@@ -8,14 +8,36 @@ export default function AuthCard() {
   const { login, register, loginWithGoogle, continueAsGuest } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [error, setError] = useState<string | null>(null);
+
+  // Validierungs-Logik: 10+ Zeichen, Groß/Klein, Zahl, Sonderzeichen
+  const validatePassword = (pass: string) => {
+    const regex =
+      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{10,}$/;
+    return regex.test(pass);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError(null);
+
+    // Regeln nur bei Registrierung anwenden
+    if (!isLogin && !validatePassword(password)) {
+      setError(
+        "PASSWORD TOO WEAK: NEED 10+ CHARS, UPPER/LOWER CASE, NUMBER & SYMBOL.",
+      );
+      return;
+    }
+
     try {
-      if (isLogin) await login({ email, password });
-      else await register({ email, password, name: email.split("@")[0] });
-    } catch (err) {
-      alert("Authentication failed. Please check your credentials.");
+      if (isLogin) {
+        await login({ email, password });
+      } else {
+        await register({ email, password, name: email.split("@")[0] });
+      }
+    } catch (err: any) {
+      // Fehler vom Backend abfangen (z.B. "Email already in use")
+      setError(err.response?.data?.message || "AUTHENTICATION FAILED.");
     }
   };
 
@@ -26,13 +48,12 @@ export default function AuthCard() {
           {isLogin ? "RESUME SESSION" : "CREATE ACCOUNT"}
         </h2>
 
-        {/* Google Login Section */}
         <div className={styles.googleWrapper}>
           <GoogleLogin
-            onSuccess={
-              (res) => res.credential && loginWithGoogle(res.credential) // Jetzt wird der Token wirklich verarbeitet
+            onSuccess={(res) =>
+              res.credential && loginWithGoogle(res.credential)
             }
-            onError={() => console.log("Login Failed")}
+            onError={() => setError("GOOGLE LOGIN FAILED.")}
             useOneTap
             shape="rectangular"
             theme="outline"
@@ -42,6 +63,9 @@ export default function AuthCard() {
         <div className={styles.separator}>
           <span className={styles.separatorText}>OR</span>
         </div>
+
+        {/* Fehleranzeige im Schreibmaschinen-Stil */}
+        {error && <div className={styles.errorMessage}>{error}</div>}
 
         <form onSubmit={handleSubmit} className={styles.form}>
           <input
@@ -65,7 +89,13 @@ export default function AuthCard() {
           </button>
         </form>
 
-        <div className={styles.toggle} onClick={() => setIsLogin(!isLogin)}>
+        <div
+          className={styles.toggle}
+          onClick={() => {
+            setIsLogin(!isLogin);
+            setError(null);
+          }}
+        >
           {isLogin
             ? "Need an account? Register here."
             : "Already have an account? Sign in."}
