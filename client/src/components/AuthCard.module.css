@@ -157,23 +157,20 @@
 }
 
 /* Farbstufen */
-.level0 {
-  width: 5%;
-  background-color: #d8a37f;
+.strengthBar.level0 {
+  background-color: #d8a37f !important;
 }
-.level1 {
-  background-color: #d19696;
-  opacity: 0.8;
+.strengthBar.level1 {
+  background-color: #d19696 !important;
 }
-.level2 {
-  background-color: #976a4b;
+.strengthBar.level2 {
+  background-color: #976a4b !important;
 }
-.level3 {
-  background-color: #6f4b28;
+.strengthBar.level3 {
+  background-color: #6f4b28 !important;
 }
-.level4 {
-  background-color: #470f0f;
-  box-shadow: 0 0 8px rgba(244, 160, 160, 0.3);
+.strengthBar.level4 {
+  background-color: #470f0f !important;
 }
 
 /* --- TRENNER & WECHSEL --- */
@@ -247,4 +244,39 @@
   75% {
     transform: translateX(4px);
   }
+}
+
+/* Container für das Passwort-Feld, damit der Button darin positioniert werden kann */
+.inputContainer {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+/* Der SHOW/HIDE Button */
+.toggleVisibility {
+  position: absolute;
+  right: 4px;
+  bottom: 12px; /* Positioniert ihn auf der Höhe der Unterlinie */
+  background: transparent;
+  border: none;
+  color: #a09a94; /* Dezent passend zum Vintage-Look */
+  font-family: "Special Elite", serif;
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+  padding: 4px;
+  transition: color 0.2s ease;
+  text-transform: uppercase;
+  z-index: 10;
+}
+
+.toggleVisibility:hover {
+  color: #f4a0a0; /* Dein Akzent-Pink beim Drüberfahren */
+}
+
+/* Verhindert, dass Text unter dem Button verschwindet */
+.inputContainer .input {
+  padding-right: 50px;
 }
