@@ -18,7 +18,7 @@ A full-stack mechanical writing simulation designed to provide a realistic analo
 
 ## Project Overview
 
-![App Vorschau](./assets/screenshots/Typewriter.png)
+![App Vorschau](./docs/Typewriter.png)
 
 This application serves as a minimalist, focused writing station. It mimics the tactile nature of a vintage typewriter through precise input handling and mechanical logic. Unlike simple text editors, this project manages complex state interactions between a multi-user authentication system, a dynamic stationery system, and a persistent database archive.
 
