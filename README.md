@@ -18,14 +18,16 @@ A full-stack mechanical writing simulation designed to provide a realistic analo
 
 ## Project Overview
 
+![App Vorschau](./assets/screenshots/Typewriter.png)
+
 This application serves as a minimalist, focused writing station. It mimics the tactile nature of a vintage typewriter through precise input handling and mechanical logic. Unlike simple text editors, this project manages complex state interactions between a multi-user authentication system, a dynamic stationery system, and a persistent database archive.
 
 ## Technical Features
 
 - **Multi-Provider Authentication**: Secure login via Google OAuth 2.0 or traditional Email/Password, managed through JWTs and protected HttpOnly cookies.
 <p align="center">
-  <img src="./assets/screenshots/login.png" width="400" alt="Login Seite">
-  <img src="./assets/screenshots/strength-meter.png" width="400" alt="Passwort Stärke">
+  <img src="./docs/login.png" width="400" alt="Login Seite">
+  <img src="./docs/strength-meter.png" width="400" alt="Passwort Stärke">
 </p>
 
 - **Hybrid Persistence (Guest Mode)**: Full "Try-before-you-buy" experience. Guests can use the typewriter immediately (storing data in LocalStorage), while registered users sync to a PostgreSQL cloud database.
