@@ -23,6 +23,11 @@ This application serves as a minimalist, focused writing station. It mimics the 
 ## Technical Features
 
 - **Multi-Provider Authentication**: Secure login via Google OAuth 2.0 or traditional Email/Password, managed through JWTs and protected HttpOnly cookies.
+<p align="center">
+  <img src="./assets/screenshots/login.png" width="400" alt="Login Seite">
+  <img src="./assets/screenshots/strength-meter.png" width="400" alt="Passwort Stärke">
+</p>
+
 - **Hybrid Persistence (Guest Mode)**: Full "Try-before-you-buy" experience. Guests can use the typewriter immediately (storing data in LocalStorage), while registered users sync to a PostgreSQL cloud database.
 - **Intelligent Data Migration**: Privacy-focused logic that allows users to "claim" their guest manuscripts after signing in, ensuring a seamless transition without data loss.
 - **Mechanical Input Engine**: High-fidelity simulation of typewriter mechanics, including carriage returns, tab stops, and spatialized mechanical sound effects.
