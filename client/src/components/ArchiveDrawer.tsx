@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import styles from "./ArchiveDrawer.module.css";
-import { useAuth } from "../context/AuthContext"; // Import für die User-Prüfung
+import { useAuth } from "../context/useAuth";
 import type { Note } from "../types/note";
 import {
   formatNoteTitleForDisplay,
@@ -121,7 +121,7 @@ export default function ArchiveDrawer({
             <div className={styles.closedView}>
               {Array.from({
                 length: Math.min(
-                  Array.isArray(archive) ? archive.length : 0 || 3,
+                  archive.length || 3,
                   6,
                 ),
               }).map((_, i) => (
