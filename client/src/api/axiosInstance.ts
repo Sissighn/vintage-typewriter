@@ -1,11 +1,13 @@
 import axios from "axios";
 
+const apiBaseUrl = (import.meta.env.VITE_API_URL || "/api").replace(/\/$/, "");
+
 /**
  * Global Axios instance for the Typewriter API.
  * The 'withCredentials' setting is mandatory for HttpOnly cookie sessions.
  */
 const api = axios.create({
-  baseURL: "http://localhost:5001/api",
+  baseURL: apiBaseUrl,
   withCredentials: true, // Crucial: Sends cookies automatically with every request
 });
 
