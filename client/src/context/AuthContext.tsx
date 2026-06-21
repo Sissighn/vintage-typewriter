@@ -1,32 +1,16 @@
-import React, { createContext, useContext, useState, useEffect } from "react";
+import { useState, useEffect, type ReactNode } from "react";
 import api from "../api/axiosInstance";
+import type { Note } from "../types/note";
+import {
+  AuthContext,
+  type LoginCredentials,
+  type RegisterData,
+  type User,
+} from "./authContextValue";
 
 const GUEST_STORAGE_KEY = "typewriter_guest_manuscripts";
 
-interface User {
-  id: string;
-  email: string;
-  name?: string;
-  avatar?: string;
-}
-
-interface AuthContextType {
-  user: User | null;
-  isGuest: boolean;
-  login: (credentials: object) => Promise<void>;
-  register: (data: object) => Promise<void>;
-  loginWithGoogle: (idToken: string) => Promise<void>;
-  continueAsGuest: () => void;
-  migrateGuestNotes: () => Promise<void>;
-  logout: () => void;
-  loading: boolean;
-}
-
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
-
-export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
-  children,
-}) => {
+export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isGuest, setIsGuest] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -41,16 +25,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     if (!saved) return;
 
     try {
-      const guestNotes = JSON.parse(saved);
-      if (guestNotes.length === 0) return;
-
-      console.log(
-        `Migrating ${guestNotes.length} manuscripts to your account...`,
+      const parsed: unknown = JSON.parse(saved);
+      if (!Array.isArray(parsed) || parsed.length === 0) return;
+      const guestNotes = parsed.filter(
+        (note): note is Note =>
+          typeof note === "object" &&
+          note !== null &&
+          "content" in note &&
+          typeof note.content === "string",
       );
+      if (guestNotes.length === 0) return;
 
       // Sende alle Notizen parallel an das Backend
       await Promise.all(
-        guestNotes.map((note: any) =>
+        guestNotes.map((note) =>
           api.post("/notes", {
             content: note.content,
             title: note.title || "Migrated Manuscript",
@@ -85,26 +73,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       .finally(() => setLoading(false));
   }, []);
 
-  const login = async (credentials: object) => {
+  const login = async (credentials: LoginCredentials) => {
     const res = await api.post("/auth/login", credentials);
     setUser(res.data.user);
     setIsGuest(false);
   };
 
-  const register = async (data: object) => {
+  const register = async (data: RegisterData) => {
     const res = await api.post("/auth/register", data);
     setUser(res.data.user);
     setIsGuest(false);
-    // Starte Migration nach Registrierung
-    await migrateGuestNotes();
   };
 
   const loginWithGoogle = async (idToken: string) => {
     const res = await api.post("/auth/google", { idToken });
     setUser(res.data.user);
     setIsGuest(false);
-    // Auch beim Google-Login migrieren
-    await migrateGuestNotes();
   };
 
   const continueAsGuest = () => {
@@ -140,10 +124,4 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       {children}
     </AuthContext.Provider>
   );
-};
-
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (!context) throw new Error("useAuth must be used within an AuthProvider");
-  return context;
 };
