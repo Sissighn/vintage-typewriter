@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import type { Note } from "../types/note";
 import api from "../api/axiosInstance";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../context/useAuth";
 import { generateNewNoteTitle } from "../utils/noteFormatters";
 
 const GUEST_STORAGE_KEY = "typewriter_guest_manuscripts";
@@ -16,21 +16,46 @@ export function useNotes() {
 
   // Notizen laden: Unterscheidung zwischen Cloud und Lokal
   useEffect(() => {
-    if (isGuest) {
+    let cancelled = false;
+
+    const loadArchive = async () => {
+      // Defer state updates so the effect does not cause a synchronous render cascade.
+      await Promise.resolve();
+      if (cancelled) return;
+
       setLoading(true);
-      const saved = localStorage.getItem(GUEST_STORAGE_KEY);
-      setArchive(saved ? JSON.parse(saved) : []);
-      setLoading(false);
-    } else if (user) {
-      setLoading(true);
-      api
-        .get("/notes")
-        .then((res) => setArchive(Array.isArray(res.data) ? res.data : []))
-        .catch(() => setArchive([]))
-        .finally(() => setLoading(false));
-    } else {
+
+      if (isGuest) {
+        const saved = localStorage.getItem(GUEST_STORAGE_KEY);
+        if (!cancelled) {
+          setArchive(saved ? JSON.parse(saved) : []);
+          setLoading(false);
+        }
+        return;
+      }
+
+      if (user) {
+        try {
+          const response = await api.get("/notes");
+          if (!cancelled) {
+            setArchive(Array.isArray(response.data) ? response.data : []);
+          }
+        } catch {
+          if (!cancelled) setArchive([]);
+        } finally {
+          if (!cancelled) setLoading(false);
+        }
+        return;
+      }
+
       setArchive([]);
-    }
+      setLoading(false);
+    };
+
+    void loadArchive();
+    return () => {
+      cancelled = true;
+    };
   }, [user, isGuest]);
 
   const saveNote = useCallback(
