@@ -1,5 +1,7 @@
 import React, { useState } from "react";
-import { useAuth } from "../context/AuthContext";
+import axios from "axios";
+import type { CredentialResponse } from "@react-oauth/google";
+import { useAuth } from "../context/useAuth";
 import styles from "./AuthCard.module.css";
 import { GoogleLogin } from "@react-oauth/google";
 
@@ -53,19 +55,22 @@ export default function AuthCard() {
       } else {
         await register({ email, password, name: email.split("@")[0] });
       }
-    } catch (err: any) {
-      setError(err.response?.data?.message || "AUTHENTICATION FAILED.");
+    } catch (error: unknown) {
+      const message = axios.isAxiosError<{ message?: string }>(error)
+        ? error.response?.data?.message
+        : undefined;
+      setError(message || "AUTHENTICATION FAILED.");
     } finally {
       setLoading(false);
     }
   };
 
-  const handleGoogleSuccess = async (credentialResponse: any) => {
+  const handleGoogleSuccess = async (credentialResponse: CredentialResponse) => {
     try {
       if (credentialResponse.credential) {
         await loginWithGoogle(credentialResponse.credential);
       }
-    } catch (err) {
+    } catch {
       setError("GOOGLE AUTHENTICATION FAILED.");
     }
   };
