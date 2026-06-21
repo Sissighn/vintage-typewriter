@@ -60,6 +60,12 @@ export default function App() {
 
   // -- UI STATE --
   const [paperType, setPaperType] = useState<string>("classic");
+  const [paperPanelOpen, setPaperPanelOpen] = useState(false);
+  const [archivePanelOpen, setArchivePanelOpen] = useState(() =>
+    window.matchMedia("(min-width: 1200px)").matches,
+  );
+  const compactLayout = () =>
+    window.matchMedia("(max-width: 1199px)").matches;
 
   // -- EFFECTS --
   useEffect(() => {
@@ -69,12 +75,32 @@ export default function App() {
     }
   }, [user, isGuest, focusInput]);
 
+  useEffect(() => {
+    const overlayOpen =
+      compactLayout() && (paperPanelOpen || archivePanelOpen);
+    document.body.style.overflow = overlayOpen ? "hidden" : "";
+
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setPaperPanelOpen(false);
+        setArchivePanelOpen(false);
+      }
+    };
+    window.addEventListener("keydown", closeOnEscape);
+
+    return () => {
+      document.body.style.overflow = "";
+      window.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [paperPanelOpen, archivePanelOpen]);
+
   // -- HANDLERS --
 
   const loadNote = useCallback(
     (note: Note) => {
       setText(note.content);
       setActiveNote(note.id);
+      if (compactLayout()) setArchivePanelOpen(false);
       setTimeout(focusInput, 50);
     },
     [setText, setActiveNote, focusInput],
@@ -97,6 +123,21 @@ export default function App() {
     downloadComponentAsImage("paper-sheet", fileName);
   }, [text]);
 
+  const setPaperOpen = (open: boolean) => {
+    setPaperPanelOpen(open);
+    if (open && compactLayout()) setArchivePanelOpen(false);
+  };
+
+  const setArchiveOpen = (open: boolean) => {
+    setArchivePanelOpen(open);
+    if (open && compactLayout()) setPaperPanelOpen(false);
+  };
+
+  const closePanels = () => {
+    setPaperPanelOpen(false);
+    setArchivePanelOpen(false);
+  };
+
   // -- RENDER LOGIC: LOADING STATE --
   // Verhindert das Aufblinken der UI während des Session-Checks
   if (authLoading) {
@@ -118,11 +159,25 @@ export default function App() {
     <div className={styles.appContainer} onClick={focusInput}>
       <Header />
 
+      {(paperPanelOpen || archivePanelOpen) && (
+        <button
+          type="button"
+          className={styles.panelBackdrop}
+          onClick={(event) => {
+            event.stopPropagation();
+            closePanels();
+          }}
+          aria-label="Close open panel"
+        />
+      )}
+
       <div className={styles.mainLayout}>
         {/* LEFT: Fixed Stationery Configurator */}
         <PaperSidebar
           currentType={paperType}
           onTypeChange={(id) => setPaperType(id)}
+          open={paperPanelOpen}
+          onOpenChange={setPaperOpen}
         />
 
         {/* CENTER: Writing Area */}
@@ -150,6 +205,8 @@ export default function App() {
           activeNote={activeNote}
           onLoad={loadNote}
           onDelete={deleteNote}
+          open={archivePanelOpen}
+          onOpenChange={setArchiveOpen}
         />
       </div>
     </div>
