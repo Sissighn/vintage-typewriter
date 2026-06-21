@@ -4,10 +4,14 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 2rem 1rem;
+  padding: 2rem 4.5rem;
   overflow-x: hidden;
   overflow-y: auto;
   background-color: #faf7f2;
+}
+
+.panelBackdrop {
+  display: none;
 }
 
 .mainLayout {
@@ -45,4 +49,42 @@
   50% {
     opacity: 1;
   }
+}
+
+@media (max-width: 1199px) {
+  .appContainer {
+    justify-content: flex-start;
+    padding: 1.5rem clamp(1rem, 4vw, 2.5rem) 6rem;
+  }
+
+  .panelBackdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 190;
+    display: block;
+    padding: 0;
+    border: 0;
+    background: rgba(55, 48, 43, 0.28);
+    backdrop-filter: blur(3px);
+    animation: backdrop-in 180ms ease-out;
+  }
+}
+
+@media (max-width: 599px) {
+  .appContainer {
+    min-height: 100dvh;
+    padding: 1rem 0.75rem 6.5rem;
+  }
+
+  .loadingText {
+    max-width: 85vw;
+    font-size: 11px;
+    line-height: 1.6;
+    text-align: center;
+  }
+}
+
+@keyframes backdrop-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
