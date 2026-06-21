@@ -8,3 +8,8 @@ services:
       POSTGRES_DB: typewriter_db
     ports:
       - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U typewriter_user -d typewriter_db"]
+      interval: 2s
+      timeout: 5s
+      retries: 15
