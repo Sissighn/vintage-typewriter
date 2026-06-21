@@ -4,7 +4,7 @@ import PaperSidebar from "./components/PaperSidebar";
 import WritingArea from "./components/WritingArea";
 import ArchiveDrawer from "./components/ArchiveDrawer";
 import AuthCard from "./components/AuthCard";
-import { useAuth } from "./context/AuthContext";
+import { useAuth } from "./context/useAuth";
 import type { Note } from "./types/note";
 
 // Logic Hooks
