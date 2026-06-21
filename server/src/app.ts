@@ -30,10 +30,15 @@ class App {
    * Note: CORS must be configured with 'credentials: true' to allow cookies.
    */
   private initializeMiddlewares(): void {
+    const allowedOrigins = (process.env.CLIENT_URL || "http://localhost:5173")
+      .split(",")
+      .map((origin) => origin.trim())
+      .filter(Boolean);
+
     this.app.use(
       cors({
-        origin: "http://localhost:5173", // Your Vite frontend URL
-        credentials: true, // Crucial for sending/receiving HttpOnly cookies
+        origin: allowedOrigins,
+        credentials: true,
       }),
     );
     this.app.use(express.json());
@@ -45,7 +50,11 @@ class App {
    * Protected routes are secured via the 'protect' middleware.
    */
   private initializeRoutes(): void {
-    // Health check / Welcome route
+    this.app.get("/health", (_req, res) => {
+      res.status(200).json({ status: "ok", service: "vintage-typewriter-api" });
+    });
+
+    // Welcome route
     this.app.get("/", (_req, res) => {
       res.send("Vintage Typewriter server is ready! // Secure Mode Active");
     });
