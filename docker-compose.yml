@@ -3,7 +3,7 @@ services:
     image: postgres:15
     restart: always
     environment:
-      POSTGRES_USER: sissighn_user
+      POSTGRES_USER: typewriter_user
       POSTGRES_PASSWORD: typewriter_pass
       POSTGRES_DB: typewriter_db
     ports:
