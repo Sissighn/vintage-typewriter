@@ -80,31 +80,21 @@ cp server/.env.example server/.env
 
 Replace the placeholder secrets and Google client ID. The default client configuration uses `/api`; Vite proxies it to `http://localhost:5001` during development.
 
-### 2. Start PostgreSQL
+### 2. Install dependencies
 
 ```bash
-docker compose up -d db
-```
-
-### 3. Install dependencies and initialize the database
-
-```bash
+npm install
 npm ci --prefix client
 npm ci --prefix server
-npm --prefix server run db:migrate
 ```
 
-### 4. Start both applications
-
-In separate terminals:
+### 3. Start the application
 
 ```bash
-npm --prefix server run dev
+npm run dev
 ```
 
-```bash
-npm --prefix client run dev
-```
+This single command starts PostgreSQL, waits for it to become healthy, synchronizes the local schema, and runs the client and server together. Press `Ctrl+C` to stop the development servers. Use `npm run dev:stop` if you also want to stop PostgreSQL. Production continues to use versioned Prisma migrations.
 
 The client runs at `http://localhost:5173`; the API runs at `http://localhost:5001` and exposes its health check at `http://localhost:5001/health`.
 
