@@ -5,8 +5,14 @@
   "packageManager": "npm@11.17.0",
   "license": "MIT",
   "scripts": {
+    "dev": "npm run dev:setup && concurrently --names server,client --prefix-colors magenta,cyan \"npm --prefix server run dev\" \"npm --prefix client run dev\"",
+    "dev:setup": "docker compose up -d --wait db && npm --prefix server run db:push",
+    "dev:stop": "docker compose stop db",
     "build": "npm --prefix client run build && npm --prefix server run build",
     "lint": "npm --prefix client run lint",
     "check": "npm run lint && npm run build"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1"
   }
 }
