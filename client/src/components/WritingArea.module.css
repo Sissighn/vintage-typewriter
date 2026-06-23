@@ -146,3 +146,66 @@
     opacity: 0.4;
   }
 }
+
+@media (max-width: 1199px) {
+  .writingAreaContainer {
+    max-width: 760px;
+  }
+
+  .paperContainer {
+    width: min(68%, 520px);
+  }
+}
+
+@media (max-width: 599px) {
+  .writingAreaContainer {
+    max-width: 100%;
+  }
+
+  .paperContainer {
+    width: min(92%, 460px);
+    margin-bottom: -10px;
+  }
+
+  .paperScroll {
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.06);
+  }
+
+  .placeholder {
+    left: 18px;
+    right: 18px;
+    font-size: 11px;
+  }
+
+  .textarea {
+    font-size: 11px;
+  }
+
+  .typewriterIllustration {
+    width: calc(100% + 8px);
+  }
+
+  .actionFooter {
+    width: 100%;
+    margin-top: 22px;
+  }
+
+  .buttonGroup {
+    width: 100%;
+    gap: 10px;
+  }
+
+  .actionButton {
+    flex: 1;
+    min-height: 48px;
+    padding: 10px 12px;
+    font-size: 8px;
+    letter-spacing: 0.12em;
+  }
+}
+
+@media (max-width: 359px) {
+  .buttonGroup {
+    flex-direction: column;
+  }
+}
