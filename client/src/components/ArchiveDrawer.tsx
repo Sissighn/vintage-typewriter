@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import styles from "./ArchiveDrawer.module.css";
 import { useAuth } from "../context/useAuth";
 import type { Note } from "../types/note";
@@ -18,6 +18,8 @@ interface ArchiveDrawerProps {
   activeNote: string | null;
   onLoad: (note: Note) => void;
   onDelete: (id: string, e: React.MouseEvent) => void;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
 }
 
 export default function ArchiveDrawer({
@@ -26,8 +28,9 @@ export default function ArchiveDrawer({
   activeNote,
   onLoad,
   onDelete,
+  open,
+  onOpenChange,
 }: ArchiveDrawerProps) {
-  const [open, setOpen] = useState(true);
   const { user, migrateGuestNotes } = useAuth(); // Zugriff auf Auth-Daten und Migration
 
   /**
@@ -41,12 +44,38 @@ export default function ArchiveDrawer({
   };
 
   return (
-    <aside
-      className={`${styles.aside} ${open ? styles.open : ""}`}
-      onClick={(e) => e.stopPropagation()}
-    >
-      <div className={`${styles.cardBox} ${open ? styles.open : ""}`}>
-        <button onClick={() => setOpen(!open)} className={styles.toggleButton}>
+    <>
+      {!open && (
+        <button
+          type="button"
+          className={styles.launcher}
+          onClick={(event) => {
+            event.stopPropagation();
+            onOpenChange(true);
+          }}
+          aria-controls="archive-panel"
+          aria-expanded="false"
+        >
+          ARCHIVE
+          {archive.length > 0 && (
+            <span className={styles.launcherCount}>{archive.length}</span>
+          )}
+        </button>
+      )}
+
+      <aside
+        id="archive-panel"
+        className={`${styles.aside} ${open ? styles.open : ""}`}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className={`${styles.cardBox} ${open ? styles.open : ""}`}>
+          <button
+            type="button"
+            onClick={() => onOpenChange(!open)}
+            className={styles.toggleButton}
+            aria-expanded={open}
+            aria-controls="archive-content"
+          >
           <span className={styles.toggleLabel}>
             {open ? "CLOSE" : "ARCHIVE"}
           </span>
@@ -55,7 +84,7 @@ export default function ArchiveDrawer({
           </span>
         </button>
 
-        <div className={styles.innerContent}>
+          <div id="archive-content" className={styles.innerContent}>
           {open ? (
             <div className={`${styles.cabinetScroll} cabinet-scroll`}>
               {/* --- NEU: MIGRATIONS-BANNER --- */}
@@ -133,8 +162,9 @@ export default function ArchiveDrawer({
               ))}
             </div>
           )}
+          </div>
         </div>
-      </div>
-    </aside>
+      </aside>
+    </>
   );
 }
