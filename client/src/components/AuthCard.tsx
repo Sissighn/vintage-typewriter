@@ -90,7 +90,6 @@ export default function AuthCard() {
             useOneTap
             shape="rectangular"
             theme="outline"
-            width="100%"
           />
         </div>
 
