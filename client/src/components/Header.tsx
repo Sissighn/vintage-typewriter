@@ -15,7 +15,14 @@ export default function Header() {
         {user ? (
           <div className={styles.userInfo}>
             {user.avatar && (
-              <img src={user.avatar} alt="Avatar" className={styles.avatar} />
+              <img
+                src={user.avatar}
+                alt=""
+                className={styles.avatar}
+                onError={(event) => {
+                  event.currentTarget.hidden = true;
+                }}
+              />
             )}
             <span className={styles.userName}>
               {user.name || user.email.split("@")[0]}
