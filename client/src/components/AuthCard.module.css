@@ -12,6 +12,8 @@
   justify-content: center;
   z-index: 1000;
   animation: fadeIn 0.4s ease-out;
+  padding: 24px;
+  overflow-y: auto;
 }
 
 .authCard {
@@ -279,4 +281,52 @@
 /* Verhindert, dass Text unter dem Button verschwindet */
 .inputContainer .input {
   padding-right: 50px;
+}
+
+@media (max-width: 599px) {
+  .authOverlay {
+    align-items: flex-start;
+    padding: max(16px, env(safe-area-inset-top)) 14px max(16px, env(safe-area-inset-bottom));
+  }
+
+  .authCard {
+    max-width: 420px;
+    margin: auto;
+    padding: 28px 22px;
+  }
+
+  .title {
+    margin-bottom: 24px;
+    font-size: 15px;
+    line-height: 1.4;
+    letter-spacing: 0.18em;
+  }
+
+  .form {
+    gap: 16px;
+  }
+
+  .submitBtn,
+  .guestBtn {
+    min-height: 48px;
+  }
+
+  .separator {
+    margin: 24px 0;
+  }
+
+  .toggle {
+    margin-top: 22px;
+    line-height: 1.5;
+  }
+}
+
+@media (max-height: 650px) {
+  .authOverlay {
+    align-items: flex-start;
+  }
+
+  .authCard {
+    margin: auto;
+  }
 }
