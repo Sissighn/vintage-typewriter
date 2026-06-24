@@ -20,13 +20,49 @@ export function useEditor({ playKeySound, saveNote }: EditorProps) {
 
   const paperScrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const autoScrollTimerRef = useRef<number | null>(null);
+  const keyFlashTimerRef = useRef<number | null>(null);
+  const cursorTimerRef = useRef<number | null>(null);
+
+  const restoreCursorSoon = useCallback(
+    (textarea: HTMLTextAreaElement, cursorPosition: number) => {
+      if (cursorTimerRef.current) {
+        window.clearTimeout(cursorTimerRef.current);
+      }
+
+      cursorTimerRef.current = window.setTimeout(() => {
+        textarea.selectionStart = textarea.selectionEnd = cursorPosition;
+        cursorTimerRef.current = null;
+      }, 0);
+    },
+    [],
+  );
+
+  useEffect(() => {
+    return () => {
+      if (autoScrollTimerRef.current) {
+        window.clearTimeout(autoScrollTimerRef.current);
+      }
+      if (keyFlashTimerRef.current) {
+        window.clearTimeout(keyFlashTimerRef.current);
+      }
+      if (cursorTimerRef.current) {
+        window.clearTimeout(cursorTimerRef.current);
+      }
+    };
+  }, []);
 
   // Auto-scroll paper
   const autoScrollPaper = useCallback(() => {
     const el = paperScrollRef.current;
     if (!el || el.scrollHeight <= el.clientHeight) return;
-    setTimeout(() => {
+    if (autoScrollTimerRef.current) {
+      window.clearTimeout(autoScrollTimerRef.current);
+    }
+
+    autoScrollTimerRef.current = window.setTimeout(() => {
       el.scrollTop = el.scrollHeight;
+      autoScrollTimerRef.current = null;
     }, 260); // Delay to allow for carriage return animation
   }, []);
 
@@ -46,7 +82,14 @@ export function useEditor({ playKeySound, saveNote }: EditorProps) {
   // Flash pressed key on virtual keyboard
   const flashKey = useCallback((k: string) => {
     setPressedKey(k);
-    setTimeout(() => setPressedKey(""), 120);
+    if (keyFlashTimerRef.current) {
+      window.clearTimeout(keyFlashTimerRef.current);
+    }
+
+    keyFlashTimerRef.current = window.setTimeout(() => {
+      setPressedKey("");
+      keyFlashTimerRef.current = null;
+    }, 120);
   }, []);
 
   // Textarea change handler
@@ -83,9 +126,7 @@ export function useEditor({ playKeySound, saveNote }: EditorProps) {
         if (newText.length <= MAX_CHARS) {
           setText(newText);
           // Position cursor after inserted spaces
-          setTimeout(() => {
-            target.selectionStart = target.selectionEnd = start + 4;
-          }, 0);
+          restoreCursorSoon(target, start + 4);
         }
         flashKey("Tab");
         playKeySound("Tab");
@@ -115,7 +156,7 @@ export function useEditor({ playKeySound, saveNote }: EditorProps) {
         }
       }
     },
-    [text, flashKey, saveNote, playKeySound],
+    [text, flashKey, saveNote, playKeySound, restoreCursorSoon],
   );
 
   // Screen-key click handler
@@ -163,12 +204,10 @@ export function useEditor({ playKeySound, saveNote }: EditorProps) {
 
       if (newText.length <= MAX_CHARS) {
         setText(newText);
-        setTimeout(() => {
-          textarea.selectionStart = textarea.selectionEnd = newCursorPos;
-        }, 0);
+        restoreCursorSoon(textarea, newCursorPos);
       }
     },
-    [text, flashKey, playKeySound],
+    [text, flashKey, playKeySound, restoreCursorSoon],
   );
 
   const focusInput = useCallback(() => inputRef.current?.focus(), []);
