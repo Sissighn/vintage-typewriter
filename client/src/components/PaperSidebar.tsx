@@ -1,9 +1,21 @@
-import { PAPER_STYLES } from "../config/paperStyles";
+import {
+  INK_STRENGTHS,
+  PAPER_STYLES,
+  RIBBON_COLORS,
+  type InkStrength,
+  type RibbonId,
+} from "../config/paperStyles";
 import styles from "./PaperSidebar.module.css";
 
 interface PaperSidebarProps {
   currentType: string;
   onTypeChange: (typeId: string) => void;
+  customPaperColor: string;
+  onCustomPaperColorChange: (color: string) => void;
+  ribbonId: RibbonId;
+  onRibbonChange: (ribbonId: RibbonId) => void;
+  inkStrength: InkStrength;
+  onInkStrengthChange: (strength: InkStrength) => void;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
@@ -11,6 +23,12 @@ interface PaperSidebarProps {
 export default function PaperSidebar({
   currentType,
   onTypeChange,
+  customPaperColor,
+  onCustomPaperColorChange,
+  ribbonId,
+  onRibbonChange,
+  inkStrength,
+  onInkStrengthChange,
   open,
   onOpenChange,
 }: PaperSidebarProps) {
@@ -70,6 +88,57 @@ export default function PaperSidebar({
               {style.name}
             </button>
           ))}
+
+          <label className={styles.controlLabel} htmlFor="custom-paper-color">
+            CUSTOM PAPER COLOR
+          </label>
+          <input
+            id="custom-paper-color"
+            className={styles.colorPicker}
+            type="color"
+            value={customPaperColor}
+            onChange={(event) => {
+              onCustomPaperColorChange(event.target.value);
+              onTypeChange("custom");
+            }}
+            aria-label="Choose custom paper color"
+          />
+
+          <p className={styles.sectionLabel}>RIBBON</p>
+          <div className={styles.optionGrid}>
+            {Object.values(RIBBON_COLORS).map((ribbon) => (
+              <button
+                type="button"
+                key={ribbon.id}
+                className={`${styles.chipButton} ${
+                  ribbonId === ribbon.id ? styles.chipButtonActive : ""
+                }`}
+                onClick={() => onRibbonChange(ribbon.id)}
+              >
+                <span
+                  className={styles.swatch}
+                  style={{ background: ribbon.color ?? "linear-gradient(135deg, #2f2a26, #f7f3e9)" }}
+                />
+                {ribbon.name}
+              </button>
+            ))}
+          </div>
+
+          <p className={styles.sectionLabel}>INK STRENGTH</p>
+          <div className={styles.optionGrid}>
+            {Object.values(INK_STRENGTHS).map((strength) => (
+              <button
+                type="button"
+                key={strength.id}
+                className={`${styles.chipButton} ${
+                  inkStrength === strength.id ? styles.chipButtonActive : ""
+                }`}
+                onClick={() => onInkStrengthChange(strength.id)}
+              >
+                {strength.name}
+              </button>
+            ))}
+          </div>
           </div>
         )}
       </aside>
