@@ -11,9 +11,22 @@ import type { Note } from "./types/note";
 import { useTypewriterSound } from "./hooks/useTypewriterSound";
 import { useNotes } from "./hooks/useNotes";
 import { useEditor } from "./hooks/useEditor";
+import {
+  getPaperStyle,
+  resolveRibbonColor,
+  type InkStrength,
+  type RibbonId,
+} from "./config/paperStyles";
 
 // Utilities & Styles
-import { downloadComponentAsImage } from "./utils/exportImage";
+import {
+  buildManuscriptTitle,
+  exportManuscript,
+  openPrintView,
+  sanitizeFileName,
+  type ExportFormat,
+  type PaperSize,
+} from "./utils/exportManuscript";
 import styles from "./App.module.css";
 
 /**
@@ -60,6 +73,15 @@ export default function App() {
 
   // -- UI STATE --
   const [paperType, setPaperType] = useState<string>("classic");
+  const [customPaperColor, setCustomPaperColor] = useState("#fff6e7");
+  const [ribbonId, setRibbonId] = useState<RibbonId>("auto");
+  const [inkStrength, setInkStrength] = useState<InkStrength>("normal");
+  const [exportFormat, setExportFormat] = useState<ExportFormat>("png");
+  const [paperSize, setPaperSize] = useState<PaperSize>("a4");
+  const [exportStatus, setExportStatus] = useState<"idle" | "working" | "error">(
+    "idle",
+  );
+  const [exportError, setExportError] = useState<string | null>(null);
   const [paperPanelOpen, setPaperPanelOpen] = useState(false);
   const [archivePanelOpen, setArchivePanelOpen] = useState(() =>
     window.matchMedia("(min-width: 1200px)").matches,
@@ -95,6 +117,23 @@ export default function App() {
   }, [paperPanelOpen, archivePanelOpen]);
 
   // -- HANDLERS --
+  const paperStyle = getPaperStyle(paperType, customPaperColor);
+  const inkColor = resolveRibbonColor(ribbonId, paperStyle);
+  const currentNote = archive.find((note) => note.id === activeNote);
+
+  const getExportOptions = useCallback(() => {
+    const title = buildManuscriptTitle(text, currentNote?.title);
+
+    return {
+      text,
+      title,
+      fileName: sanitizeFileName(title),
+      paperSize,
+      paperStyle,
+      inkColor,
+      inkStrength,
+    };
+  }, [currentNote?.title, inkColor, inkStrength, paperSize, paperStyle, text]);
 
   const loadNote = useCallback(
     (note: Note) => {
@@ -117,11 +156,45 @@ export default function App() {
     [removeNote, setText],
   );
 
-  const handleExportImage = useCallback(() => {
+  const handleExport = useCallback(async () => {
     if (!text.trim()) return;
-    const fileName = `Manuscript_${new Date().toISOString().slice(0, 10)}`;
-    downloadComponentAsImage("paper-sheet", fileName);
-  }, [text]);
+    setExportStatus("working");
+    setExportError(null);
+
+    try {
+      await exportManuscript({
+        ...getExportOptions(),
+        format: exportFormat,
+      });
+      setExportStatus("idle");
+    } catch (error) {
+      console.error("Export failed:", error);
+      setExportError(
+        error instanceof Error
+          ? error.message
+          : "Export failed. Please try again.",
+      );
+      setExportStatus("error");
+    }
+  }, [exportFormat, getExportOptions, text]);
+
+  const handlePrint = useCallback(() => {
+    if (!text.trim()) return;
+    setExportError(null);
+
+    try {
+      openPrintView(getExportOptions());
+      setExportStatus("idle");
+    } catch (error) {
+      console.error("Print view failed:", error);
+      setExportError(
+        error instanceof Error
+          ? error.message
+          : "Print view failed. Please try again.",
+      );
+      setExportStatus("error");
+    }
+  }, [getExportOptions, text]);
 
   const setPaperOpen = (open: boolean) => {
     setPaperPanelOpen(open);
@@ -176,6 +249,12 @@ export default function App() {
         <PaperSidebar
           currentType={paperType}
           onTypeChange={(id) => setPaperType(id)}
+          customPaperColor={customPaperColor}
+          onCustomPaperColorChange={setCustomPaperColor}
+          ribbonId={ribbonId}
+          onRibbonChange={setRibbonId}
+          inkStrength={inkStrength}
+          onInkStrengthChange={setInkStrength}
           open={paperPanelOpen}
           onOpenChange={setPaperOpen}
         />
@@ -183,7 +262,13 @@ export default function App() {
         {/* CENTER: Writing Area */}
         <WritingArea
           text={text}
-          paperType={paperType}
+          paperStyle={paperStyle}
+          inkColor={inkColor}
+          inkStrength={inkStrength}
+          exportFormat={exportFormat}
+          paperSize={paperSize}
+          exportStatus={exportStatus}
+          exportError={exportError}
           pressedKey={pressedKey}
           carriageReturn={carriageReturn}
           saving={saving}
@@ -195,7 +280,10 @@ export default function App() {
           handleKeyClick={handleKeyClick}
           focusInput={focusInput}
           onSave={() => archiveNote(text)}
-          onExport={handleExportImage}
+          onExport={handleExport}
+          onPrint={handlePrint}
+          onExportFormatChange={setExportFormat}
+          onPaperSizeChange={setPaperSize}
         />
 
         {/* RIGHT: Box-style Archive Drawer */}
