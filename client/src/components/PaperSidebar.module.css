@@ -63,6 +63,62 @@
 .paperButtonActive { color: #605b56; border-bottom: 1px solid #605b56; opacity: 1; }
 .paperButtonInactive { color: #8e867e; border-bottom: 1px solid transparent; opacity: 0.75; }
 
+.controlLabel {
+  margin-top: 8px;
+  font-family: "Special Elite", serif;
+  font-size: 8px;
+  letter-spacing: 0.18em;
+  color: #a69e95;
+}
+
+.colorPicker {
+  width: 100%;
+  height: 42px;
+  padding: 4px;
+  border: 1px solid #e0d8cf;
+  border-radius: 999px;
+  background: #fffdfa;
+  cursor: pointer;
+}
+
+.optionGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+}
+
+.chipButton {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 36px;
+  padding: 8px 10px;
+  border: 1px solid #e5ded7;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.45);
+  color: #817970;
+  cursor: pointer;
+  font-family: "Special Elite", serif;
+  font-size: 8px;
+  letter-spacing: 0.12em;
+  text-align: left;
+  transition: border-color 0.25s ease, color 0.25s ease, background 0.25s ease;
+}
+
+.chipButtonActive {
+  border-color: #817970;
+  background: #fffefa;
+  color: #4a4540;
+}
+
+.swatch {
+  flex: 0 0 auto;
+  width: 16px;
+  height: 16px;
+  border: 1px solid rgba(60, 52, 46, 0.18);
+  border-radius: 50%;
+}
+
 @media (max-width: 1199px) {
   .sidebar, .sidebarOpen, .sidebarClosed {
     top: 0;
@@ -96,6 +152,7 @@
   }
 
   .toggleButton { min-height: 64px; padding: 0; }
+  .menu { padding-bottom: 36px; }
 }
 
 @media (max-width: 599px) {
@@ -114,4 +171,5 @@
   .launcher { left: 12px; bottom: max(12px, env(safe-area-inset-bottom)); min-width: 104px; }
   .menu { gap: 6px; padding: 18px 24px max(24px, env(safe-area-inset-bottom)); }
   .paperButton { min-height: 46px; }
+  .optionGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
