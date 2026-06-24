@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import type { Note } from "../types/note";
 import api from "../api/axiosInstance";
 import { useAuth } from "../context/useAuth";
-import { generateNewNoteTitle } from "../utils/noteFormatters";
+import { buildManuscriptTitle } from "../utils/exportManuscript";
 
 const GUEST_STORAGE_KEY = "typewriter_guest_manuscripts";
 
@@ -69,7 +69,7 @@ export function useNotes() {
         const newGuestNote: Note = {
           id: Date.now().toString(),
           content: text,
-          title: generateNewNoteTitle(),
+          title: buildManuscriptTitle(text),
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
           userId: "guest",
@@ -85,7 +85,7 @@ export function useNotes() {
         try {
           const res = await api.post("/notes", {
             content: text,
-            title: generateNewNoteTitle(),
+            title: buildManuscriptTitle(text),
           });
           setArchive((prev) => [res.data, ...prev]);
           setSaveMsg("ok");
