@@ -85,6 +85,35 @@
   gap: 15px;
 }
 
+.exportPanel {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+}
+
+.exportControl {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: "Special Elite", serif;
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #8e867e;
+}
+
+.exportControl select {
+  min-height: 34px;
+  padding: 8px 28px 8px 10px;
+  border: 1px solid #e3dcd5;
+  border-radius: 2px;
+  background: #fffdfa;
+  color: #605b56;
+  font: inherit;
+  cursor: pointer;
+}
+
 .actionButton {
   font-family: "Special Elite", serif;
   font-size: 10px;
@@ -122,7 +151,9 @@
 }
 
 .statusContainer {
-  height: 14px;
+  min-height: 14px;
+  max-width: min(92vw, 620px);
+  text-align: center;
 }
 
 .statusOk {
@@ -193,14 +224,28 @@
   .buttonGroup {
     width: 100%;
     gap: 10px;
+    flex-wrap: wrap;
   }
 
   .actionButton {
-    flex: 1;
+    flex: 1 1 30%;
     min-height: 48px;
     padding: 10px 12px;
     font-size: 8px;
     letter-spacing: 0.12em;
+  }
+
+  .exportPanel {
+    width: 100%;
+  }
+
+  .exportControl {
+    flex: 1 1 140px;
+    justify-content: space-between;
+  }
+
+  .exportControl select {
+    flex: 1;
   }
 }
 
