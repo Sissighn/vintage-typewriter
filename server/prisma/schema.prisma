@@ -35,6 +35,7 @@ model Note {
   id        String   @id @default(uuid())
   title     String   @default("Untitled Manuscript")
   content   String   @db.Text
+  favorite  Boolean  @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
