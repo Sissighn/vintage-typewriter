@@ -1,13 +1,21 @@
 import React from "react";
 import Typewriter from "./Typewriter";
 import styles from "./WritingArea.module.css";
-import { PAPER_STYLES } from "../config/paperStyles";
+import type { ExportFormat, PaperSize } from "../utils/exportManuscript";
+import type { InkStrength, PaperStyle } from "../config/paperStyles";
+import { INK_STRENGTHS } from "../config/paperStyles";
 import { MAX_CHARS, PAPER_H, PAPER_PAD_V } from "../config/editorConfig";
 
 interface WritingAreaProps {
   // State
   text: string;
-  paperType: string;
+  paperStyle: PaperStyle;
+  inkColor: string;
+  inkStrength: InkStrength;
+  exportFormat: ExportFormat;
+  paperSize: PaperSize;
+  exportStatus: "idle" | "working" | "error";
+  exportError: string | null;
   pressedKey: string;
   carriageReturn: number;
   saving: boolean;
@@ -20,13 +28,22 @@ interface WritingAreaProps {
   handleKeyDown: (e: React.KeyboardEvent<HTMLTextAreaElement>) => void;
   handleKeyClick: (value: string, type: "char" | "key") => void;
   onSave: () => void;
-  onExport: () => void; // New handler for image export
+  onExport: () => void;
+  onPrint: () => void;
+  onExportFormatChange: (format: ExportFormat) => void;
+  onPaperSizeChange: (paperSize: PaperSize) => void;
   focusInput: () => void;
 }
 
 export default function WritingArea({
   text,
-  paperType,
+  paperStyle,
+  inkColor,
+  inkStrength,
+  exportFormat,
+  paperSize,
+  exportStatus,
+  exportError,
   pressedKey,
   carriageReturn,
   saving,
@@ -38,8 +55,13 @@ export default function WritingArea({
   handleKeyClick,
   onSave,
   onExport,
+  onPrint,
+  onExportFormatChange,
+  onPaperSizeChange,
   focusInput,
 }: WritingAreaProps) {
+  const ink = INK_STRENGTHS[inkStrength];
+
   return (
     <div className={styles.writingAreaContainer} onClick={focusInput}>
       {/* -- PAPER SHEET -- */}
@@ -50,8 +72,10 @@ export default function WritingArea({
           className={`${styles.paperScroll} paper-scroll`}
           style={{
             height: PAPER_H,
-            background: PAPER_STYLES[paperType].background,
-            backgroundSize: PAPER_STYLES[paperType].backgroundSize || "auto",
+            background: paperStyle.background,
+            backgroundSize: paperStyle.backgroundSize || "auto",
+            borderColor: paperStyle.borderColor || "#e8e4df",
+            boxShadow: paperStyle.shadow || undefined,
           }}
         >
           {text.length === 0 && (
@@ -59,10 +83,8 @@ export default function WritingArea({
               className={styles.placeholder}
               style={{
                 top: `${PAPER_PAD_V}px`,
-                color:
-                  paperType === "blueprint"
-                    ? "rgba(255,255,255,0.3)"
-                    : "rgba(160,154,148,0.5)",
+                color: inkColor,
+                opacity: 0.35,
               }}
             >
               Begin your manuscript...
@@ -78,8 +100,11 @@ export default function WritingArea({
             aria-label="Manuscript input"
             style={{
               padding: `${PAPER_PAD_V}px 26px`,
-              color: PAPER_STYLES[paperType].textColor || "#4A4540",
-              caretColor: paperType === "blueprint" ? "#fff" : "#4A4540",
+              color: inkColor,
+              caretColor: inkColor,
+              opacity: ink.opacity,
+              fontWeight: ink.fontWeight,
+              textShadow: ink.shadow,
             }}
           />
         </div>
@@ -109,10 +134,48 @@ export default function WritingArea({
           <button
             className={`${styles.actionButton} ${styles.secondaryButton}`}
             onClick={onExport}
-            disabled={!text.trim()}
+            disabled={!text.trim() || exportStatus === "working"}
           >
-            Download Image
+            {exportStatus === "working" ? "Exporting..." : "Export"}
           </button>
+
+          <button
+            className={`${styles.actionButton} ${styles.secondaryButton}`}
+            onClick={onPrint}
+            disabled={!text.trim() || exportStatus === "working"}
+          >
+            Print View
+          </button>
+        </div>
+
+        <div className={styles.exportPanel}>
+          <label className={styles.exportControl}>
+            <span>Format</span>
+            <select
+              value={exportFormat}
+              onChange={(event) =>
+                onExportFormatChange(event.target.value as ExportFormat)
+              }
+            >
+              <option value="png">PNG</option>
+              <option value="txt">TXT</option>
+              <option value="md">Markdown</option>
+              <option value="pdf">PDF</option>
+            </select>
+          </label>
+
+          <label className={styles.exportControl}>
+            <span>Paper</span>
+            <select
+              value={paperSize}
+              onChange={(event) =>
+                onPaperSizeChange(event.target.value as PaperSize)
+              }
+            >
+              <option value="a4">A4</option>
+              <option value="letter">Letter</option>
+            </select>
+          </label>
         </div>
 
         {/* Status Indicators */}
@@ -120,6 +183,9 @@ export default function WritingArea({
           {saveMsg === "ok" && <span className={styles.statusOk}>✓ Saved</span>}
           {saveMsg === "err" && (
             <span className={styles.statusErr}>✗ Error</span>
+          )}
+          {exportStatus === "error" && exportError && (
+            <span className={styles.statusErr}>✗ {exportError}</span>
           )}
         </div>
       </div>
