@@ -48,11 +48,16 @@ export default function App() {
     activeNote,
     loading: notesLoading,
     saving,
-    saveMsg,
+    saveState,
     setActiveNote,
     saveNote: archiveNote,
+    duplicateNote: duplicateArchiveNote,
+    toggleFavorite: toggleArchiveFavorite,
     deleteNote: removeNote,
   } = useNotes();
+
+  const saveShortcutRef = React.useRef<() => void>(() => {});
+  const focusTimerRef = React.useRef<number | null>(null);
 
   // Custom hook managing editor mechanics (Keyboard, Cursor, Scrolling)
   const {
@@ -68,10 +73,15 @@ export default function App() {
     focusInput,
   } = useEditor({
     playKeySound,
-    saveNote: () => archiveNote(text),
+    saveNote: () => saveShortcutRef.current(),
   });
 
   // -- UI STATE --
+  const [title, setTitle] = useState("Untitled Manuscript");
+  const [lastSavedSnapshot, setLastSavedSnapshot] = useState({
+    title: "Untitled Manuscript",
+    content: "",
+  });
   const [paperType, setPaperType] = useState<string>("classic");
   const [customPaperColor, setCustomPaperColor] = useState("#fff6e7");
   const [ribbonId, setRibbonId] = useState<RibbonId>("auto");
@@ -116,44 +126,165 @@ export default function App() {
     };
   }, [paperPanelOpen, archivePanelOpen]);
 
+  useEffect(() => {
+    return () => {
+      if (focusTimerRef.current) {
+        window.clearTimeout(focusTimerRef.current);
+      }
+    };
+  }, []);
+
   // -- HANDLERS --
   const paperStyle = getPaperStyle(paperType, customPaperColor);
   const inkColor = resolveRibbonColor(ribbonId, paperStyle);
   const currentNote = archive.find((note) => note.id === activeNote);
+  const hasUnsavedChanges =
+    title !== lastSavedSnapshot.title || text !== lastSavedSnapshot.content;
+
+  const focusEditorSoon = useCallback(() => {
+    if (focusTimerRef.current) {
+      window.clearTimeout(focusTimerRef.current);
+    }
+
+    focusTimerRef.current = window.setTimeout(() => {
+      focusInput();
+      focusTimerRef.current = null;
+    }, 50);
+  }, [focusInput]);
+
+  const canDiscardDraft = useCallback(() => {
+    if (!hasUnsavedChanges) return true;
+
+    return window.confirm(
+      "You have unsaved changes. Do you want to discard them?",
+    );
+  }, [hasUnsavedChanges]);
+
+  useEffect(() => {
+    const warnBeforeUnload = (event: BeforeUnloadEvent) => {
+      if (!hasUnsavedChanges) return;
+      event.preventDefault();
+      event.returnValue = "";
+    };
+
+    window.addEventListener("beforeunload", warnBeforeUnload);
+    return () => window.removeEventListener("beforeunload", warnBeforeUnload);
+  }, [hasUnsavedChanges]);
 
   const getExportOptions = useCallback(() => {
-    const title = buildManuscriptTitle(text, currentNote?.title);
+    const exportTitle = buildManuscriptTitle(text, title || currentNote?.title);
 
     return {
       text,
-      title,
-      fileName: sanitizeFileName(title),
+      title: exportTitle,
+      fileName: sanitizeFileName(exportTitle),
       paperSize,
       paperStyle,
       inkColor,
       inkStrength,
     };
-  }, [currentNote?.title, inkColor, inkStrength, paperSize, paperStyle, text]);
+  }, [
+    currentNote?.title,
+    inkColor,
+    inkStrength,
+    paperSize,
+    paperStyle,
+    text,
+    title,
+  ]);
+
+  const saveCurrentManuscript = useCallback(async () => {
+    if (!text.trim()) return null;
+
+    const savedNote = await archiveNote({
+      id: activeNote,
+      title,
+      content: text,
+      favorite: currentNote?.favorite ?? false,
+    });
+
+    if (savedNote) {
+      setTitle(savedNote.title);
+      setLastSavedSnapshot({
+        title: savedNote.title,
+        content: savedNote.content,
+      });
+    }
+
+    return savedNote;
+  }, [activeNote, archiveNote, currentNote?.favorite, text, title]);
+
+  useEffect(() => {
+    saveShortcutRef.current = () => {
+      void saveCurrentManuscript();
+    };
+  }, [saveCurrentManuscript]);
+
+  useEffect(() => {
+    if (!hasUnsavedChanges || !text.trim() || saving) return;
+
+    const autosaveTimer = window.setTimeout(() => {
+      void saveCurrentManuscript();
+    }, 1400);
+
+    return () => window.clearTimeout(autosaveTimer);
+  }, [hasUnsavedChanges, saveCurrentManuscript, saving, text]);
 
   const loadNote = useCallback(
-    (note: Note) => {
+    (note: Note, skipConfirm = false) => {
+      if (!skipConfirm && !canDiscardDraft()) return;
       setText(note.content);
+      setTitle(note.title);
+      setLastSavedSnapshot({ title: note.title, content: note.content });
       setActiveNote(note.id);
       if (compactLayout()) setArchivePanelOpen(false);
-      setTimeout(focusInput, 50);
+      focusEditorSoon();
     },
-    [setText, setActiveNote, focusInput],
+    [canDiscardDraft, focusEditorSoon, setActiveNote, setText],
   );
+
+  const newManuscript = useCallback((skipConfirm = false) => {
+    if (!skipConfirm && !canDiscardDraft()) return;
+    setActiveNote(null);
+    setText("");
+    setTitle("Untitled Manuscript");
+    setLastSavedSnapshot({ title: "Untitled Manuscript", content: "" });
+    focusEditorSoon();
+  }, [canDiscardDraft, focusEditorSoon, setActiveNote, setText]);
 
   const deleteNote = useCallback(
     async (id: string, e: React.MouseEvent) => {
       e.stopPropagation();
       const wasActiveNote = await removeNote(id);
       if (wasActiveNote) {
-        setText("");
+        newManuscript(true);
       }
     },
-    [removeNote, setText],
+    [newManuscript, removeNote],
+  );
+
+  const duplicateNote = useCallback(
+    async (note: Note, event: React.MouseEvent) => {
+      event.stopPropagation();
+      if (!canDiscardDraft()) return;
+      const duplicatedNote = await duplicateArchiveNote(note);
+      if (duplicatedNote) loadNote(duplicatedNote, true);
+    },
+    [canDiscardDraft, duplicateArchiveNote, loadNote],
+  );
+
+  const toggleFavorite = useCallback(
+    async (note: Note, event: React.MouseEvent) => {
+      event.stopPropagation();
+      const updatedNote = await toggleArchiveFavorite(note);
+      if (updatedNote && activeNote === updatedNote.id) {
+        setLastSavedSnapshot({
+          title: updatedNote.title,
+          content: updatedNote.content,
+        });
+      }
+    },
+    [activeNote, toggleArchiveFavorite],
   );
 
   const handleExport = useCallback(async () => {
@@ -262,6 +393,9 @@ export default function App() {
         {/* CENTER: Writing Area */}
         <WritingArea
           text={text}
+          title={title}
+          activeNoteId={activeNote}
+          hasUnsavedChanges={hasUnsavedChanges}
           paperStyle={paperStyle}
           inkColor={inkColor}
           inkStrength={inkStrength}
@@ -272,14 +406,16 @@ export default function App() {
           pressedKey={pressedKey}
           carriageReturn={carriageReturn}
           saving={saving}
-          saveMsg={saveMsg}
+          saveState={saveState}
           inputRef={inputRef as React.RefObject<HTMLTextAreaElement>}
           paperScrollRef={paperScrollRef as React.RefObject<HTMLDivElement>}
           handleTextChange={handleTextChange}
+          onTitleChange={setTitle}
           handleKeyDown={handleKeyDown}
           handleKeyClick={handleKeyClick}
           focusInput={focusInput}
-          onSave={() => archiveNote(text)}
+          onNew={newManuscript}
+          onSave={saveCurrentManuscript}
           onExport={handleExport}
           onPrint={handlePrint}
           onExportFormatChange={setExportFormat}
@@ -293,6 +429,8 @@ export default function App() {
           activeNote={activeNote}
           onLoad={loadNote}
           onDelete={deleteNote}
+          onDuplicate={duplicateNote}
+          onToggleFavorite={toggleFavorite}
           open={archivePanelOpen}
           onOpenChange={setArchiveOpen}
         />
