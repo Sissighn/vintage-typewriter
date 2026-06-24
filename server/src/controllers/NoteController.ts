@@ -14,19 +14,46 @@ export class NoteController {
    */
   public async addNote(req: AuthRequest, res: Response): Promise<void> {
     try {
-      const { content, title } = req.body;
+      const { content, title, favorite } = req.body;
 
       // Wir übergeben die userId als ersten Parameter, wie im Service definiert
       const newNote = await this.noteService.createNote(
         req.userId!,
         title,
         content,
+        Boolean(favorite),
       );
 
       res.status(201).json(newNote);
     } catch (error) {
       console.error("Failed to save note:", error);
       res.status(500).json({ error: "Failed to save note." });
+    }
+  }
+
+  /**
+   * Aktualisiert ein bestehendes Manuskript für den aktuellen User.
+   */
+  public async updateNote(req: AuthRequest, res: Response): Promise<void> {
+    try {
+      const id = req.params.id as string;
+      const { content, title, favorite } = req.body;
+
+      const updatedNote = await this.noteService.updateUserNote(
+        id,
+        req.userId!,
+        { content, title, favorite },
+      );
+
+      if (!updatedNote) {
+        res.status(404).json({ error: "Manuscript not found." });
+        return;
+      }
+
+      res.json(updatedNote);
+    } catch (error) {
+      console.error("Failed to update note:", error);
+      res.status(500).json({ error: "Failed to update note." });
     }
   }
 
