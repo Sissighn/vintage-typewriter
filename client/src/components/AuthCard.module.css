@@ -55,7 +55,16 @@
 .form {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 8px;
+  text-align: left;
+}
+
+.fieldLabel {
+  font-family: "Special Elite", serif;
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  color: #6f675f;
+  text-transform: uppercase;
 }
 
 .input {
@@ -73,6 +82,15 @@
 .input:focus {
   outline: none;
   border-bottom-color: #4a4540;
+}
+
+.input:focus-visible,
+.submitBtn:focus-visible,
+.guestBtn:focus-visible,
+.toggle:focus-visible,
+.toggleVisibility:focus-visible {
+  outline: 3px solid #5f6f93;
+  outline-offset: 3px;
 }
 
 .input:disabled {
@@ -197,9 +215,12 @@
 
 .toggle {
   margin-top: 25px;
+  width: 100%;
+  background: transparent;
+  border: none;
   font-family: "Special Elite", serif;
   font-size: 10px;
-  color: #a09a94;
+  color: #756d65;
   cursor: pointer;
   text-decoration: underline;
   text-underline-offset: 4px;
@@ -252,7 +273,9 @@
 .inputContainer {
   position: relative;
   display: flex;
-  align-items: center;
+  flex-direction: column;
+  gap: 8px;
+  align-items: stretch;
   width: 100%;
 }
 

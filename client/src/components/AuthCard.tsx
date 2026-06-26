@@ -98,10 +98,23 @@ export default function AuthCard() {
         </div>
 
         {/* Fehlermeldungen */}
-        {error && <div className={styles.errorMessage}>{error}</div>}
+        {error && (
+          <div
+            id="auth-error"
+            className={styles.errorMessage}
+            role="alert"
+            aria-live="assertive"
+          >
+            {error}
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className={styles.form}>
+          <label className={styles.fieldLabel} htmlFor="auth-email">
+            Email address
+          </label>
           <input
+            id="auth-email"
             type="email"
             placeholder="EMAIL ADDRESS"
             className={styles.input}
@@ -109,10 +122,17 @@ export default function AuthCard() {
             onChange={(e) => setEmail(e.target.value)}
             required
             disabled={loading}
+            autoComplete="email"
+            aria-invalid={Boolean(error)}
+            aria-describedby={error ? "auth-error" : undefined}
           />
 
           <div className={styles.inputContainer}>
+            <label className={styles.fieldLabel} htmlFor="auth-password">
+              Password
+            </label>
             <input
+              id="auth-password"
               type={showPassword ? "text" : "password"}
               placeholder="PASSWORD"
               className={styles.input}
@@ -120,12 +140,16 @@ export default function AuthCard() {
               onChange={(e) => setPassword(e.target.value)}
               required
               disabled={loading}
+              autoComplete={isLogin ? "current-password" : "new-password"}
+              aria-invalid={Boolean(error)}
+              aria-describedby={error ? "auth-error" : undefined}
             />
             <button
               type="button"
               className={styles.toggleVisibility}
               onClick={() => setShowPassword(!showPassword)}
-              tabIndex={-1}
+              aria-pressed={showPassword}
+              aria-label={showPassword ? "Hide password" : "Show password"}
             >
               {showPassword ? "HIDE" : "SHOW"}
             </button>
@@ -152,7 +176,8 @@ export default function AuthCard() {
         </form>
 
         {/* Wechsel zwischen Login/Register */}
-        <div
+        <button
+          type="button"
           className={styles.toggle}
           onClick={() => {
             setIsLogin(!isLogin);
@@ -164,7 +189,7 @@ export default function AuthCard() {
           {isLogin
             ? "Need an account? Register here."
             : "Already have an account? Sign in."}
-        </div>
+        </button>
 
         {/* Guest Mode */}
         <button
