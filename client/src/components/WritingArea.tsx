@@ -237,7 +237,12 @@ export default function WritingArea({
         </div>
 
         {/* Status Indicators */}
-        <div className={styles.statusContainer}>
+        <div
+          className={styles.statusContainer}
+          role="status"
+          aria-live="polite"
+          aria-atomic="true"
+        >
           {saveState === "saving" && <span className={styles.statusWarn}>Saving...</span>}
           {saveState === "saved" && <span className={styles.statusOk}>✓ Saved</span>}
           {saveState === "offline" && <span className={styles.statusErr}>Offline</span>}

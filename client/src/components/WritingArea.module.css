@@ -55,6 +55,13 @@
   box-shadow: 0 12px 35px rgba(70, 58, 50, 0.08);
 }
 
+.titleInput:focus-visible,
+.actionButton:focus-visible,
+.exportControl select:focus-visible {
+  outline: 3px solid #5f6f93;
+  outline-offset: 3px;
+}
+
 .titleInputDirty {
   border-color: #d4a5a5;
 }
@@ -108,6 +115,11 @@
   white-space: pre-wrap;
   word-break: break-word;
   overflow-y: hidden;
+}
+
+.textarea:focus-visible {
+  outline: 3px solid #5f6f93;
+  outline-offset: -3px;
 }
 
 .rollerShadow {
