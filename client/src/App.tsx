@@ -58,6 +58,10 @@ export default function App() {
 
   const saveShortcutRef = React.useRef<() => void>(() => {});
   const focusTimerRef = React.useRef<number | null>(null);
+  const pendingDraftActionRef = React.useRef<(() => void) | null>(null);
+  const draftDialogRef = React.useRef<HTMLDivElement>(null);
+  const draftDialogCancelRef = React.useRef<HTMLButtonElement>(null);
+  const draftDialogTriggerRef = React.useRef<HTMLElement | null>(null);
 
   // Custom hook managing editor mechanics (Keyboard, Cursor, Scrolling)
   const {
@@ -96,6 +100,7 @@ export default function App() {
   const [archivePanelOpen, setArchivePanelOpen] = useState(() =>
     window.matchMedia("(min-width: 1200px)").matches,
   );
+  const [draftDialogOpen, setDraftDialogOpen] = useState(false);
   const compactLayout = () =>
     window.matchMedia("(max-width: 1199px)").matches;
 
@@ -152,13 +157,32 @@ export default function App() {
     }, 50);
   }, [focusInput]);
 
-  const canDiscardDraft = useCallback(() => {
-    if (!hasUnsavedChanges) return true;
+  const requestDiscardDraft = useCallback(
+    (action: () => void) => {
+      if (!hasUnsavedChanges) {
+        action();
+        return;
+      }
 
-    return window.confirm(
-      "You have unsaved changes. Do you want to discard them?",
-    );
-  }, [hasUnsavedChanges]);
+      draftDialogTriggerRef.current = document.activeElement as HTMLElement;
+      pendingDraftActionRef.current = action;
+      setDraftDialogOpen(true);
+    },
+    [hasUnsavedChanges],
+  );
+
+  const closeDraftDialog = useCallback(() => {
+    setDraftDialogOpen(false);
+    pendingDraftActionRef.current = null;
+    draftDialogTriggerRef.current?.focus();
+  }, []);
+
+  const continueDraftAction = useCallback(() => {
+    const action = pendingDraftActionRef.current;
+    setDraftDialogOpen(false);
+    pendingDraftActionRef.current = null;
+    action?.();
+  }, []);
 
   useEffect(() => {
     const warnBeforeUnload = (event: BeforeUnloadEvent) => {
@@ -170,6 +194,41 @@ export default function App() {
     window.addEventListener("beforeunload", warnBeforeUnload);
     return () => window.removeEventListener("beforeunload", warnBeforeUnload);
   }, [hasUnsavedChanges]);
+
+  useEffect(() => {
+    if (!draftDialogOpen) return;
+
+    draftDialogCancelRef.current?.focus();
+
+    const handleDraftDialogKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        closeDraftDialog();
+        return;
+      }
+
+      if (event.key !== "Tab") return;
+
+      const focusableElements = draftDialogRef.current?.querySelectorAll<
+        HTMLButtonElement
+      >("button:not(:disabled)");
+      if (!focusableElements || focusableElements.length === 0) return;
+
+      const firstElement = focusableElements[0];
+      const lastElement = focusableElements[focusableElements.length - 1];
+
+      if (event.shiftKey && document.activeElement === firstElement) {
+        event.preventDefault();
+        lastElement.focus();
+      } else if (!event.shiftKey && document.activeElement === lastElement) {
+        event.preventDefault();
+        firstElement.focus();
+      }
+    };
+
+    window.addEventListener("keydown", handleDraftDialogKeyDown);
+    return () =>
+      window.removeEventListener("keydown", handleDraftDialogKeyDown);
+  }, [closeDraftDialog, draftDialogOpen]);
 
   const getExportOptions = useCallback(() => {
     const exportTitle = buildManuscriptTitle(text, title || currentNote?.title);
@@ -232,29 +291,44 @@ export default function App() {
 
   const loadNote = useCallback(
     (note: Note, skipConfirm = false) => {
-      if (!skipConfirm && !canDiscardDraft()) return;
-      setText(note.content);
-      setTitle(note.title);
-      setLastSavedSnapshot({ title: note.title, content: note.content });
-      setActiveNote(note.id);
-      if (compactLayout()) setArchivePanelOpen(false);
-      focusEditorSoon();
+      const loadSelectedNote = () => {
+        setText(note.content);
+        setTitle(note.title);
+        setLastSavedSnapshot({ title: note.title, content: note.content });
+        setActiveNote(note.id);
+        if (compactLayout()) setArchivePanelOpen(false);
+        focusEditorSoon();
+      };
+
+      if (skipConfirm) {
+        loadSelectedNote();
+        return;
+      }
+
+      requestDiscardDraft(loadSelectedNote);
     },
-    [canDiscardDraft, focusEditorSoon, setActiveNote, setText],
+    [focusEditorSoon, requestDiscardDraft, setActiveNote, setText],
   );
 
   const newManuscript = useCallback((skipConfirm = false) => {
-    if (!skipConfirm && !canDiscardDraft()) return;
-    setActiveNote(null);
-    setText("");
-    setTitle("Untitled Manuscript");
-    setLastSavedSnapshot({ title: "Untitled Manuscript", content: "" });
-    focusEditorSoon();
-  }, [canDiscardDraft, focusEditorSoon, setActiveNote, setText]);
+    const startFreshDraft = () => {
+      setActiveNote(null);
+      setText("");
+      setTitle("Untitled Manuscript");
+      setLastSavedSnapshot({ title: "Untitled Manuscript", content: "" });
+      focusEditorSoon();
+    };
+
+    if (skipConfirm) {
+      startFreshDraft();
+      return;
+    }
+
+    requestDiscardDraft(startFreshDraft);
+  }, [focusEditorSoon, requestDiscardDraft, setActiveNote, setText]);
 
   const deleteNote = useCallback(
-    async (id: string, e: React.MouseEvent) => {
-      e.stopPropagation();
+    async (id: string) => {
       const wasActiveNote = await removeNote(id);
       if (wasActiveNote) {
         newManuscript(true);
@@ -266,11 +340,13 @@ export default function App() {
   const duplicateNote = useCallback(
     async (note: Note, event: React.MouseEvent) => {
       event.stopPropagation();
-      if (!canDiscardDraft()) return;
-      const duplicatedNote = await duplicateArchiveNote(note);
-      if (duplicatedNote) loadNote(duplicatedNote, true);
+      requestDiscardDraft(() => {
+        void duplicateArchiveNote(note).then((duplicatedNote) => {
+          if (duplicatedNote) loadNote(duplicatedNote, true);
+        });
+      });
     },
-    [canDiscardDraft, duplicateArchiveNote, loadNote],
+    [duplicateArchiveNote, loadNote, requestDiscardDraft],
   );
 
   const toggleFavorite = useCallback(
@@ -414,7 +490,7 @@ export default function App() {
           handleKeyDown={handleKeyDown}
           handleKeyClick={handleKeyClick}
           focusInput={focusInput}
-          onNew={newManuscript}
+          onNew={() => newManuscript()}
           onSave={saveCurrentManuscript}
           onExport={handleExport}
           onPrint={handlePrint}
@@ -435,6 +511,43 @@ export default function App() {
           onOpenChange={setArchiveOpen}
         />
       </div>
+
+      {draftDialogOpen && (
+        <div className={styles.dialogBackdrop} role="presentation">
+          <div
+            ref={draftDialogRef}
+            className={styles.dialog}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="draft-dialog-title"
+            aria-describedby="draft-dialog-description"
+          >
+            <h2 id="draft-dialog-title" className={styles.dialogTitle}>
+              Discard unsaved changes?
+            </h2>
+            <p id="draft-dialog-description" className={styles.dialogText}>
+              Your current manuscript has changes that have not been saved yet.
+            </p>
+            <div className={styles.dialogActions}>
+              <button
+                ref={draftDialogCancelRef}
+                type="button"
+                className={styles.dialogCancel}
+                onClick={closeDraftDialog}
+              >
+                Keep editing
+              </button>
+              <button
+                type="button"
+                className={styles.dialogDanger}
+                onClick={continueDraftAction}
+              >
+                Discard
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

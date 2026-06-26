@@ -24,6 +24,80 @@
   gap: 0;
 }
 
+.dialogBackdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 650;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(40, 34, 30, 0.38);
+  backdrop-filter: blur(4px);
+}
+
+.dialog {
+  width: min(92vw, 400px);
+  padding: 28px;
+  border: 1px solid #d9cbc2;
+  border-radius: 4px;
+  background: #fffdfa;
+  box-shadow: 0 24px 60px rgba(45, 34, 28, 0.25);
+  text-align: center;
+}
+
+.dialogTitle {
+  margin: 0 0 12px;
+  color: #4a4540;
+  font-family: "Special Elite", serif;
+  font-size: 15px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.dialogText {
+  margin: 0;
+  color: #6f675f;
+  font-family: "Special Elite", serif;
+  font-size: 11px;
+  line-height: 1.6;
+}
+
+.dialogActions {
+  display: flex;
+  gap: 12px;
+  margin-top: 22px;
+}
+
+.dialogCancel,
+.dialogDanger {
+  flex: 1;
+  min-height: 42px;
+  border-radius: 2px;
+  cursor: pointer;
+  font-family: "Special Elite", serif;
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.dialogCancel {
+  border: 1px solid #d9cbc2;
+  background: transparent;
+  color: #5d5750;
+}
+
+.dialogDanger {
+  border: 1px solid #8e3d3d;
+  background: #8e3d3d;
+  color: #fffdfa;
+}
+
+.dialogCancel:focus-visible,
+.dialogDanger:focus-visible {
+  outline: 3px solid #5f6f93;
+  outline-offset: 3px;
+}
+
 .loadingScreen {
   height: 100vh;
   width: 100vw;
