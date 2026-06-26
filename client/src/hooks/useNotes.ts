@@ -268,9 +268,6 @@ export function useNotes() {
 
   const deleteNote = useCallback(
     async (id: string) => {
-      if (!window.confirm("Are you sure you want to destroy this manuscript?"))
-        return false;
-
       if (isGuest) {
         const wasActiveNote = activeNote === id;
         persistGuestArchive(archiveRef.current.filter((note) => note.id !== id));
