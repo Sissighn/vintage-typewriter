@@ -186,6 +186,8 @@ const Typewriter: React.FC<TypewriterProps> = ({
     width: wide ? wideW[wide] : KEY_SIZE,
     height: KEY_SIZE,
     borderRadius: wide ? "6px" : "50%",
+    border: "none",
+    padding: 0,
     cursor: "pointer",
     flexShrink: 0,
     userSelect: "none",
@@ -233,6 +235,11 @@ const Typewriter: React.FC<TypewriterProps> = ({
         @media (prefers-reduced-motion: reduce) {
           .tw-carriage-anim { animation: none !important; }
         }
+        .tw-screen-key:focus-visible {
+          outline: 3px solid #5f6f93;
+          outline-offset: 4px;
+          z-index: 5;
+        }
       `}</style>
 
       {/* ── Machine outer wrapper — stays completely static ── */}
@@ -244,8 +251,8 @@ const Typewriter: React.FC<TypewriterProps> = ({
           filter:
             "drop-shadow(0 30px 60px rgba(0,0,0,0.6)) drop-shadow(0 8px 24px rgba(180,100,100,0.18))",
         }}
-        aria-label="Vintage baby-pink typewriter"
-        role="img"
+        aria-label="Vintage typewriter keyboard"
+        role="group"
       >
         {/* ════════════════════════════════════════════════════════
             .carriage — THE ONLY ELEMENT THAT TRANSLATES ON ENTER
@@ -507,13 +514,13 @@ const Typewriter: React.FC<TypewriterProps> = ({
                 {row.map((k, kIdx) => {
                   const pressed = isPressed(k);
                   return (
-                    <div
+                    <button
                       key={kIdx}
                       style={keyBase(k.wide, k.special, pressed)}
-                      onMouseDown={(e) => handleKey(e, k)}
-                      role="button"
+                      onClick={(e) => handleKey(e, k)}
+                      type="button"
+                      className="tw-screen-key"
                       aria-label={k.label}
-                      tabIndex={-1}
                     >
                       <div
                         style={{
@@ -556,7 +563,7 @@ const Typewriter: React.FC<TypewriterProps> = ({
                       >
                         {k.label}
                       </span>
-                    </div>
+                    </button>
                   );
                 })}
               </div>
@@ -570,12 +577,14 @@ const Typewriter: React.FC<TypewriterProps> = ({
                 marginTop: KEY_GAP,
               }}
             >
-              <div
+              <button
                 style={{
                   position: "relative",
                   width: "52%",
                   height: "clamp(16px,2.8vw,24px)",
                   borderRadius: 8,
+                  border: "none",
+                  padding: 0,
                   cursor: "pointer",
                   transform:
                     pressedKey === " " ? "translateY(3px)" : "translateY(0)",
@@ -585,13 +594,13 @@ const Typewriter: React.FC<TypewriterProps> = ({
                       ? "0 1px 0 0 rgba(180,150,140,0.7), 0 2px 4px rgba(0,0,0,0.3)"
                       : "0 4px 0 0 rgba(180,150,140,0.7), 0 5px 8px rgba(0,0,0,0.4)",
                 }}
-                onMouseDown={(e) => {
+                onClick={(e) => {
                   e.preventDefault();
                   onKeyClick?.(" ", "char");
                 }}
-                role="button"
+                type="button"
+                className="tw-screen-key"
                 aria-label="Spacebar"
-                tabIndex={-1}
               >
                 <div
                   style={{
@@ -625,7 +634,7 @@ const Typewriter: React.FC<TypewriterProps> = ({
                     pointerEvents: "none",
                   }}
                 />
-              </div>
+              </button>
             </div>
           </div>
 
