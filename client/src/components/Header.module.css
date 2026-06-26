@@ -79,6 +79,11 @@
   color: #f4a0a0;
 }
 
+.logoutBtn:focus-visible {
+  outline: 3px solid #5f6f93;
+  outline-offset: 3px;
+}
+
 @media (max-width: 1199px) {
   .header {
     padding: 16px 20px 10px;
