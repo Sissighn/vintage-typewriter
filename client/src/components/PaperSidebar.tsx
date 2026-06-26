@@ -5,6 +5,7 @@ import {
   type InkStrength,
   type RibbonId,
 } from "../config/paperStyles";
+import { useEffect, useRef } from "react";
 import styles from "./PaperSidebar.module.css";
 
 interface PaperSidebarProps {
@@ -32,6 +33,22 @@ export default function PaperSidebar({
   open,
   onOpenChange,
 }: PaperSidebarProps) {
+  const launcherRef = useRef<HTMLButtonElement>(null);
+  const toggleRef = useRef<HTMLButtonElement>(null);
+  const wasOpenRef = useRef(open);
+
+  useEffect(() => {
+    if (open && !wasOpenRef.current) {
+      toggleRef.current?.focus();
+    }
+
+    if (!open && wasOpenRef.current) {
+      window.setTimeout(() => launcherRef.current?.focus(), 0);
+    }
+
+    wasOpenRef.current = open;
+  }, [open]);
+
   const selectPaper = (typeId: string) => {
     onTypeChange(typeId);
     if (window.matchMedia("(max-width: 1199px)").matches) {
@@ -43,6 +60,7 @@ export default function PaperSidebar({
     <>
       {!open && (
         <button
+          ref={launcherRef}
           type="button"
           className={styles.launcher}
           onClick={(event) => {
@@ -62,6 +80,7 @@ export default function PaperSidebar({
         onClick={(event) => event.stopPropagation()}
       >
         <button
+          ref={toggleRef}
           type="button"
           onClick={() => onOpenChange(!open)}
           className={styles.toggleButton}

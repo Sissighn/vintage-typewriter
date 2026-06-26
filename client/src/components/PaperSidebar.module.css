@@ -119,6 +119,15 @@
   border-radius: 50%;
 }
 
+.launcher:focus-visible,
+.toggleButton:focus-visible,
+.paperButton:focus-visible,
+.colorPicker:focus-visible,
+.chipButton:focus-visible {
+  outline: 3px solid #5f6f93;
+  outline-offset: 3px;
+}
+
 @media (max-width: 1199px) {
   .sidebar, .sidebarOpen, .sidebarClosed {
     top: 0;
