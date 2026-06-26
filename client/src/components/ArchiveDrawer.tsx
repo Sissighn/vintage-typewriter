@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import styles from "./ArchiveDrawer.module.css";
 import { useAuth } from "../context/useAuth";
 import type { Note } from "../types/note";
@@ -14,7 +14,7 @@ interface ArchiveDrawerProps {
   loading: boolean;
   activeNote: string | null;
   onLoad: (note: Note) => void;
-  onDelete: (id: string, e: React.MouseEvent) => void;
+  onDelete: (id: string) => void;
   onDuplicate: (note: Note, e: React.MouseEvent) => void;
   onToggleFavorite: (note: Note, e: React.MouseEvent) => void;
   open: boolean;
@@ -41,6 +41,14 @@ export default function ArchiveDrawer({
     "updated",
   );
   const [favoritesOnly, setFavoritesOnly] = useState(false);
+  const [pendingDeleteNote, setPendingDeleteNote] = useState<Note | null>(null);
+  const [discardGuestDialogOpen, setDiscardGuestDialogOpen] = useState(false);
+  const launcherRef = useRef<HTMLButtonElement>(null);
+  const toggleRef = useRef<HTMLButtonElement>(null);
+  const cancelDeleteRef = useRef<HTMLButtonElement>(null);
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const lastTriggerRef = useRef<HTMLElement | null>(null);
+  const wasOpenRef = useRef(open);
 
   const filteredArchive = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
@@ -62,20 +70,68 @@ export default function ArchiveDrawer({
       });
   }, [archive, favoritesOnly, searchQuery, sortMode]);
 
+  useEffect(() => {
+    if (open && !wasOpenRef.current) {
+      toggleRef.current?.focus();
+    }
+
+    if (!open && wasOpenRef.current) {
+      window.setTimeout(() => launcherRef.current?.focus(), 0);
+    }
+
+    wasOpenRef.current = open;
+  }, [open]);
+
+  useEffect(() => {
+    if (!pendingDeleteNote && !discardGuestDialogOpen) return;
+
+    cancelDeleteRef.current?.focus();
+
+    const handleDialogKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setPendingDeleteNote(null);
+        setDiscardGuestDialogOpen(false);
+        lastTriggerRef.current?.focus();
+        return;
+      }
+
+      if (event.key !== "Tab") return;
+
+      const focusableElements = dialogRef.current?.querySelectorAll<
+        HTMLButtonElement
+      >("button:not(:disabled)");
+      if (!focusableElements || focusableElements.length === 0) return;
+
+      const firstElement = focusableElements[0];
+      const lastElement = focusableElements[focusableElements.length - 1];
+
+      if (event.shiftKey && document.activeElement === firstElement) {
+        event.preventDefault();
+        lastElement.focus();
+      } else if (!event.shiftKey && document.activeElement === lastElement) {
+        event.preventDefault();
+        firstElement.focus();
+      }
+    };
+
+    window.addEventListener("keydown", handleDialogKeyDown);
+    return () => window.removeEventListener("keydown", handleDialogKeyDown);
+  }, [discardGuestDialogOpen, pendingDeleteNote]);
+
   /**
    * Löscht die lokalen Gast-Notizen, falls der User sie nicht importieren möchte.
    */
   const handleDiscardGuestNotes = () => {
-    if (window.confirm("Do you want to permanently discard the guest notes?")) {
-      clearGuestNotes();
-      setGuestNotesAvailable(false);
-    }
+    clearGuestNotes();
+    setGuestNotesAvailable(false);
+    setDiscardGuestDialogOpen(false);
   };
 
   return (
     <>
       {!open && (
         <button
+          ref={launcherRef}
           type="button"
           className={styles.launcher}
           onClick={(event) => {
@@ -99,6 +155,7 @@ export default function ArchiveDrawer({
       >
         <div className={`${styles.cardBox} ${open ? styles.open : ""}`}>
           <button
+            ref={toggleRef}
             type="button"
             onClick={() => onOpenChange(!open)}
             className={styles.toggleButton}
@@ -122,13 +179,18 @@ export default function ArchiveDrawer({
                   <p className={styles.migrationText}>GUEST NOTES FOUND</p>
                   <div className={styles.migrationActions}>
                     <button
+                      type="button"
                       onClick={migrateGuestNotes}
                       className={styles.migrationBtn}
                     >
                       SAVE TO ACCOUNT
                     </button>
                     <button
-                      onClick={handleDiscardGuestNotes}
+                      type="button"
+                      onClick={(event) => {
+                        lastTriggerRef.current = event.currentTarget;
+                        setDiscardGuestDialogOpen(true);
+                      }}
                       className={styles.discardBtn}
                     >
                       DISCARD
@@ -138,13 +200,19 @@ export default function ArchiveDrawer({
               )}
 
               {loading ? (
-                <p className={styles.noManuscripts}>LOADING ARCHIVE...</p>
+                <p className={styles.noManuscripts} aria-live="polite">
+                  LOADING ARCHIVE...
+                </p>
               ) : !Array.isArray(archive) || archive.length === 0 ? (
                 <p className={styles.noManuscripts}>NO MANUSCRIPTS FOUND</p>
               ) : (
                 <>
                   <div className={styles.archiveTools}>
+                    <label className={styles.toolLabel} htmlFor="archive-search">
+                      Search
+                    </label>
                     <input
+                      id="archive-search"
                       className={styles.searchInput}
                       value={searchQuery}
                       onChange={(event) => setSearchQuery(event.target.value)}
@@ -152,7 +220,11 @@ export default function ArchiveDrawer({
                       aria-label="Search archive"
                     />
                     <div className={styles.archiveControls}>
+                      <label className={styles.toolLabel} htmlFor="archive-sort">
+                        Sort
+                      </label>
                       <select
+                        id="archive-sort"
                         className={styles.sortSelect}
                         value={sortMode}
                         onChange={(event) =>
@@ -173,6 +245,11 @@ export default function ArchiveDrawer({
                         }`}
                         onClick={() => setFavoritesOnly((value) => !value)}
                         aria-pressed={favoritesOnly}
+                        aria-label={
+                          favoritesOnly
+                            ? "Show all manuscripts"
+                            : "Show favorite manuscripts only"
+                        }
                       >
                         ★
                       </button>
@@ -183,9 +260,8 @@ export default function ArchiveDrawer({
                     <p className={styles.noManuscripts}>NO MATCHES FOUND</p>
                   ) : (
                     filteredArchive.map((note, idx) => (
-                      <div
+                      <article
                         key={note.id}
-                        onClick={() => onLoad(note)}
                         className={`${styles.noteCard} ${
                           activeNote === note.id ? styles.active : ""
                         }`}
@@ -196,8 +272,23 @@ export default function ArchiveDrawer({
                             background: TAB_COLORS[idx % TAB_COLORS.length],
                           }}
                         />
-                        <div className={styles.noteHeader}>
-                          <div className={styles.noteTitle}>{note.title}</div>
+                        <button
+                          type="button"
+                          className={styles.noteMainButton}
+                          onClick={() => onLoad(note)}
+                          aria-current={activeNote === note.id ? "true" : undefined}
+                        >
+                          <div className={styles.noteHeader}>
+                            <div className={styles.noteTitle}>{note.title}</div>
+                          </div>
+                          <p className={styles.noteExcerpt}>
+                            {note.content.slice(0, 96) || "Empty manuscript"}
+                          </p>
+                          <span className={styles.noteDate}>
+                            {formatDateForDisplay(note.updatedAt)}
+                          </span>
+                        </button>
+                        <div className={styles.noteSideActions}>
                           <button
                             type="button"
                             className={`${styles.favoriteButton} ${
@@ -213,29 +304,29 @@ export default function ArchiveDrawer({
                             ★
                           </button>
                         </div>
-                        <p className={styles.noteExcerpt}>
-                          {note.content.slice(0, 96) || "Empty manuscript"}
-                        </p>
                         <div className={styles.noteMeta}>
-                          <span className={styles.noteDate}>
-                            {formatDateForDisplay(note.updatedAt)}
-                          </span>
                           <div className={styles.noteActions}>
                             <button
+                              type="button"
                               className={styles.metaButton}
                               onClick={(e) => onDuplicate(note, e)}
                             >
                               COPY
                             </button>
                             <button
+                              type="button"
                               className={styles.deleteButton}
-                              onClick={(e) => onDelete(note.id, e)}
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                lastTriggerRef.current = event.currentTarget;
+                                setPendingDeleteNote(note);
+                              }}
                             >
                               DELETE
                             </button>
                           </div>
                         </div>
-                      </div>
+                      </article>
                     ))
                   )}
                 </>
@@ -260,6 +351,69 @@ export default function ArchiveDrawer({
           </div>
         </div>
       </aside>
+
+      {(pendingDeleteNote || discardGuestDialogOpen) && (
+        <div
+          className={styles.dialogBackdrop}
+          role="presentation"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) {
+              setPendingDeleteNote(null);
+              setDiscardGuestDialogOpen(false);
+              lastTriggerRef.current?.focus();
+            }
+          }}
+        >
+          <div
+            ref={dialogRef}
+            className={styles.dialog}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="delete-dialog-title"
+            aria-describedby="delete-dialog-description"
+          >
+            <h2 id="delete-dialog-title" className={styles.dialogTitle}>
+              {pendingDeleteNote
+                ? "Destroy manuscript?"
+                : "Discard guest notes?"}
+            </h2>
+            <p id="delete-dialog-description" className={styles.dialogText}>
+              {pendingDeleteNote
+                ? `This permanently removes “${pendingDeleteNote.title}” from your archive.`
+                : "This permanently removes the local guest manuscripts from this browser."}
+            </p>
+            <div className={styles.dialogActions}>
+              <button
+                ref={cancelDeleteRef}
+                type="button"
+                className={styles.dialogCancel}
+                onClick={() => {
+                  setPendingDeleteNote(null);
+                  setDiscardGuestDialogOpen(false);
+                  lastTriggerRef.current?.focus();
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className={styles.dialogDanger}
+                onClick={() => {
+                  if (pendingDeleteNote) {
+                    onDelete(pendingDeleteNote.id);
+                    setPendingDeleteNote(null);
+                  } else {
+                    handleDiscardGuestNotes();
+                  }
+                  lastTriggerRef.current?.focus();
+                }}
+              >
+                {pendingDeleteNote ? "Delete" : "Discard"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }

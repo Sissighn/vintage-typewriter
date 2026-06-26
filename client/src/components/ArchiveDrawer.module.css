@@ -199,6 +199,15 @@
   border-color: #c8bab0;
 }
 
+.toolLabel {
+  align-self: center;
+  color: #6f675f;
+  font-family: "Special Elite", serif;
+  font-size: 8px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
 .archiveControls {
   display: flex;
   gap: 8px;
@@ -246,6 +255,18 @@
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.02);
 }
 
+.noteMainButton {
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+}
+
 .noteCard:hover {
   transform: translateX(-4px);
   border-color: #d6c8be;
@@ -278,9 +299,15 @@
 .noteHeader {
   display: flex;
   align-items: flex-start;
-  justify-content: space-between;
+  justify-content: flex-start;
   gap: 8px;
   margin-bottom: 8px;
+}
+
+.noteSideActions {
+  position: absolute;
+  top: 12px;
+  right: 12px;
 }
 
 .favoriteButton {
@@ -328,6 +355,8 @@
 .noteActions {
   display: flex;
   align-items: center;
+  justify-content: flex-end;
+  width: 100%;
   gap: 8px;
 }
 
@@ -362,6 +391,91 @@
 .deleteButton:hover {
   opacity: 1;
   text-decoration: underline;
+}
+
+.dialogBackdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 600;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(40, 34, 30, 0.38);
+  backdrop-filter: blur(4px);
+}
+
+.dialog {
+  width: min(92vw, 380px);
+  padding: 26px;
+  border: 1px solid #d9cbc2;
+  border-radius: 4px;
+  background: #fffdfa;
+  box-shadow: 0 24px 60px rgba(45, 34, 28, 0.25);
+  text-align: center;
+}
+
+.dialogTitle {
+  margin: 0 0 12px;
+  color: #4a4540;
+  font-family: "Special Elite", serif;
+  font-size: 15px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.dialogText {
+  margin: 0;
+  color: #6f675f;
+  font-family: "Special Elite", serif;
+  font-size: 11px;
+  line-height: 1.6;
+}
+
+.dialogActions {
+  display: flex;
+  gap: 12px;
+  margin-top: 22px;
+}
+
+.dialogCancel,
+.dialogDanger {
+  flex: 1;
+  min-height: 42px;
+  border-radius: 2px;
+  cursor: pointer;
+  font-family: "Special Elite", serif;
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.dialogCancel {
+  border: 1px solid #d9cbc2;
+  background: transparent;
+  color: #5d5750;
+}
+
+.dialogDanger {
+  border: 1px solid #8e3d3d;
+  background: #8e3d3d;
+  color: #fffdfa;
+}
+
+.launcher:focus-visible,
+.toggleButton:focus-visible,
+.searchInput:focus-visible,
+.sortSelect:focus-visible,
+.filterButton:focus-visible,
+.noteMainButton:focus-visible,
+.favoriteButton:focus-visible,
+.metaButton:focus-visible,
+.deleteButton:focus-visible,
+.migrationBtn:focus-visible,
+.discardBtn:focus-visible,
+.dialogCancel:focus-visible,
+.dialogDanger:focus-visible {
+  outline: 3px solid #5f6f93;
+  outline-offset: 3px;
 }
 
 /* ── CLOSED STATE ── */
