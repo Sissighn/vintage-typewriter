@@ -1,12 +1,12 @@
 import express, { Application } from "express";
-import dotenv from "dotenv";
 import cors from "cors";
 import cookieParser from "cookie-parser";
+import helmet from "helmet";
 import noteRoutes from "./routes/noteRoutes";
 import authRoutes from "./routes/authRoutes";
 import { protect } from "./middleware/authMiddleware";
-
-dotenv.config();
+import { createOriginGuard } from "./middleware/originGuard";
+import { env, isProduction } from "./config/env";
 
 /**
  * Main Application Class
@@ -30,18 +30,44 @@ class App {
    * Note: CORS must be configured with 'credentials: true' to allow cookies.
    */
   private initializeMiddlewares(): void {
-    const allowedOrigins = (process.env.CLIENT_URL || "http://localhost:5173")
+    const allowedOrigins = env.clientUrl
       .split(",")
       .map((origin) => origin.trim())
       .filter(Boolean);
 
+    this.app.disable("x-powered-by");
+    if (isProduction) {
+      this.app.set("trust proxy", 1);
+    }
+    this.app.use(
+      helmet({
+        crossOriginResourcePolicy: { policy: "same-site" },
+        contentSecurityPolicy: isProduction
+          ? {
+              useDefaults: true,
+              directives: {
+                "default-src": ["'self'"],
+                "frame-ancestors": ["'none'"],
+              },
+            }
+          : false,
+      }),
+    );
     this.app.use(
       cors({
-        origin: allowedOrigins,
+        origin(origin, callback) {
+          if (!origin || allowedOrigins.includes(origin)) {
+            callback(null, true);
+            return;
+          }
+
+          callback(new Error("Not allowed by CORS"));
+        },
         credentials: true,
       }),
     );
-    this.app.use(express.json());
+    this.app.use(createOriginGuard(allowedOrigins));
+    this.app.use(express.json({ limit: "32kb" }));
     this.app.use(cookieParser()); // Enables the server to parse cookies from requests
   }
 
@@ -75,12 +101,12 @@ class App {
     this.app.listen(this.port, () => {
       console.log(`--- Server running on port ${this.port} ---`);
       console.log(`--- API protected by Argon2 & JWT Cookies ---`);
-      console.log(`--- Ready for frontend at http://localhost:5173 ---`);
+      console.log(`--- Ready for frontend at ${env.clientUrl} ---`);
     });
   }
 }
 
 // Initialize and start the application
 // Port 5001 is used to prevent the common MacOS Port 5000 conflict.
-const server = new App(Number(process.env.PORT) || 5001);
+const server = new App(env.port);
 server.listen();
