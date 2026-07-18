@@ -1,5 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
+import { AUTH_COOKIE_NAME } from "../config/cookies";
+import { env } from "../config/env";
 
 // Extend the Express Request type to include the userId
 export interface AuthRequest extends Request {
@@ -15,7 +17,7 @@ export const protect = async (
   res: Response,
   next: NextFunction,
 ) => {
-  const token = req.cookies.token;
+  const token = req.cookies[AUTH_COOKIE_NAME];
 
   if (!token) {
     return res.status(401).json({ message: "Not authorized, no token found" });
@@ -23,7 +25,7 @@ export const protect = async (
 
   try {
     // Verify the JWT token using your secret from .env
-    const decoded = jwt.verify(token, process.env.JWT_SECRET as string) as {
+    const decoded = jwt.verify(token, env.jwtSecret) as {
       userId: string;
     };
 
