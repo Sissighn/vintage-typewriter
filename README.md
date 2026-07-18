@@ -115,10 +115,22 @@ The client runs at `http://localhost:5173`; the API runs at `http://localhost:50
 | `PORT` | No | `5001` | HTTP server port |
 | `CLIENT_URL` | Yes in production | `http://localhost:5173` | Comma-separated CORS origins |
 | `DATABASE_URL` | Yes | — | PostgreSQL connection URL |
-| `JWT_SECRET` | Yes | — | JWT signing secret |
-| `PASSWORD_PEPPER` | Yes | — | Additional password-hashing secret |
-| `GOOGLE_CLIENT_ID` | For Google login | — | Accepted Google token audience |
+| `JWT_SECRET` | Yes | — | JWT signing secret; server startup fails if missing or shorter than 32 characters |
+| `PASSWORD_PEPPER` | Yes | — | Additional password-hashing secret; server startup fails if missing, shorter than 32 characters, or set to `default_pepper` |
+| `GOOGLE_CLIENT_ID` | Yes | — | Accepted Google token audience |
 | `NODE_ENV` | No | — | Enables secure cookies when set to `production` |
+
+## Security Notes
+
+- The API refuses to start without `JWT_SECRET`, `PASSWORD_PEPPER`, and `GOOGLE_CLIENT_ID`.
+- Passwords are hashed with Argon2 plus an application-level pepper. There is no insecure fallback pepper.
+- Auth cookies are `HttpOnly`, `SameSite=Lax`, and `Secure` in production. Logout clears the cookie with the same cookie options used when setting it.
+- Mutating cookie-authenticated requests are protected by a same-origin strategy: CORS only allows configured `CLIENT_URL` origins, and non-safe methods must include an allowed `Origin` header.
+- Login and registration routes are rate-limited to reduce brute-force and account-creation abuse.
+- Google sign-in verifies the token audience and rejects accounts where `email_verified` is false.
+- Existing password accounts are not silently linked to Google accounts. A Google login using an already registered password email returns a conflict response instead of auto-linking.
+
+Password reset and email verification are not implemented yet. For production, add a verified email flow before allowing password resets or sensitive account changes.
 
 ## Quality Checks
 
