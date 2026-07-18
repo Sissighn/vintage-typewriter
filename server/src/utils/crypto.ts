@@ -1,7 +1,8 @@
 // server/src/utils/crypto.ts
 import argon2 from "argon2";
+import { env } from "../config/env";
 
-const PEPPER = process.env.PASSWORD_PEPPER || "default_pepper";
+const PEPPER = env.passwordPepper;
 
 export const hashPassword = async (password: string): Promise<string> => {
   // Wir fügen den Pepper zum Passwort hinzu, bevor wir hashen

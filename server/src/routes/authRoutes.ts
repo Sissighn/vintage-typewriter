@@ -7,13 +7,17 @@ import {
   logout,
   getMe,
 } from "../controllers/authController";
+import {
+  authRateLimiter,
+  registrationRateLimiter,
+} from "../middleware/rateLimiters";
 
 const router = Router();
 
 // Public routes
-router.post("/register", register);
-router.post("/login", login);
-router.post("/google", googleLogin);
+router.post("/register", registrationRateLimiter, register);
+router.post("/login", authRateLimiter, login);
+router.post("/google", authRateLimiter, googleLogin);
 router.post("/logout", logout);
 router.get("/me", protect, getMe);
 
