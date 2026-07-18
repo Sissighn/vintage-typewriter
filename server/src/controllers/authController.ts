@@ -2,26 +2,40 @@ import { Request, Response } from "express";
 import jwt from "jsonwebtoken";
 import { OAuth2Client } from "google-auth-library";
 import { PrismaClient } from "@prisma/client";
+import { z } from "zod";
 import { hashPassword, verifyPassword } from "../utils/crypto";
 import { AuthRequest } from "../middleware/authMiddleware";
+import { env } from "../config/env";
+import { clearAuthCookie, setAuthCookie } from "../config/cookies";
 
 const prisma = new PrismaClient();
-const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+const googleClient = new OAuth2Client(env.googleClientId);
+
+const passwordSchema = z
+  .string()
+  .regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{10,}$/);
+
+const emailSchema = z.string().email().transform((email) => email.toLowerCase());
+
+const registerSchema = z.object({
+  email: emailSchema,
+  password: passwordSchema,
+  name: z.string().trim().min(1).max(80).optional(),
+});
+
+const loginSchema = z.object({
+  email: emailSchema,
+  password: z.string().min(1).max(256),
+});
+
+const googleLoginSchema = z.object({
+  idToken: z.string().min(20).max(5000),
+});
 
 // Token helper: Creates a signed JWT valid for 24 hours
 const createToken = (userId: string) => {
-  return jwt.sign({ userId }, process.env.JWT_SECRET as string, {
+  return jwt.sign({ userId }, env.jwtSecret, {
     expiresIn: "24h",
-  });
-};
-
-// Cookie helper: Sets a secure HttpOnly cookie
-const setAuthCookie = (res: Response, token: string) => {
-  res.cookie("token", token, {
-    httpOnly: true, // Prevents XSS attacks
-    secure: process.env.NODE_ENV === "production", // HTTPS only in production
-    sameSite: "lax",
-    maxAge: 24 * 60 * 60 * 1000, // 24 hours
   });
 };
 
@@ -31,16 +45,13 @@ const setAuthCookie = (res: Response, token: string) => {
 // Ergänzung in der register-Funktion:
 export const register = async (req: Request, res: Response) => {
   try {
-    const { email, password, name } = req.body;
-
-    // 1. Serverseitige Passwort-Validierung
-    const passwordRegex =
-      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{10,}$/;
-    if (!passwordRegex.test(password)) {
+    const parsed = registerSchema.safeParse(req.body);
+    if (!parsed.success) {
       return res.status(400).json({
-        message: "PASSWORD DOES NOT MEET SECURITY REQUIREMENTS.",
+        message: "INVALID REGISTRATION DATA.",
       });
     }
+    const { email, password, name } = parsed.data;
 
     // 2. Prüfen, ob User existiert
     const existingUser = await prisma.user.findUnique({ where: { email } });
@@ -71,7 +82,11 @@ export const register = async (req: Request, res: Response) => {
  */
 export const login = async (req: Request, res: Response) => {
   try {
-    const { email, password } = req.body;
+    const parsed = loginSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ message: "Invalid email or password" });
+    }
+    const { email, password } = parsed.data;
 
     // 1. Find user by email
     const user = await prisma.user.findUnique({ where: { email } });
@@ -108,28 +123,70 @@ export const login = async (req: Request, res: Response) => {
  */
 export const googleLogin = async (req: Request, res: Response) => {
   try {
-    const { idToken } = req.body;
+    const parsed = googleLoginSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ message: "Invalid Google token" });
+    }
+    const { idToken } = parsed.data;
 
     // 1. Verify the Google Token with Google's API
     const ticket = await googleClient.verifyIdToken({
       idToken,
-      audience: process.env.GOOGLE_CLIENT_ID,
+      audience: env.googleClientId,
     });
 
     const payload = ticket.getPayload();
-    if (!payload || !payload.email) {
+    if (!payload || !payload.email || !payload.sub) {
       return res.status(400).json({ message: "Invalid Google token" });
     }
 
-    // 2. Find or create the user in our database
+    if (!payload.email_verified) {
+      return res.status(403).json({
+        message: "Google account email is not verified.",
+      });
+    }
+
+    const email = payload.email.toLowerCase();
+
+    // 2. Find by Google ID first. This is the strongest account binding.
     let user = await prisma.user.findUnique({
-      where: { email: payload.email },
+      where: { googleId: payload.sub },
     });
 
+    if (user && user.email !== email) {
+      user = await prisma.user.update({
+        where: { id: user.id },
+        data: {
+          email,
+          name: payload.name || user.name,
+          avatar: payload.picture || user.avatar,
+        },
+      });
+    }
+
     if (!user) {
+      const existingEmailUser = await prisma.user.findUnique({
+        where: { email },
+      });
+
+      if (existingEmailUser) {
+        if (existingEmailUser.googleId && existingEmailUser.googleId !== payload.sub) {
+          return res.status(409).json({
+            message: "This email is already linked to another Google account.",
+          });
+        }
+
+        if (!existingEmailUser.googleId) {
+          return res.status(409).json({
+            message:
+              "This email already has a password account. Sign in with email first before linking Google.",
+          });
+        }
+      }
+
       user = await prisma.user.create({
         data: {
-          email: payload.email,
+          email,
           name: payload.name,
           googleId: payload.sub,
           avatar: payload.picture,
@@ -159,7 +216,7 @@ export const googleLogin = async (req: Request, res: Response) => {
  * Logout and clear the secure cookie
  */
 export const logout = (req: Request, res: Response) => {
-  res.clearCookie("token");
+  clearAuthCookie(res);
   res.json({ message: "Logged out successfully" });
 };
 
